@@ -1,0 +1,364 @@
+version: '3.8'
+
+networks:
+  lakehouse-net:
+    driver: bridge
+
+volumes:
+  minio-data:
+  postgres-data:
+  kafka-data:
+  zookeeper-data:
+  spark-iceberg-warehouse:
+
+services:
+  # ===================== POSTGRES (для Polaris Metastore и Airflow) =====================
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${PG_POLARIS_USER}
+      POSTGRES_PASSWORD: ${PG_POLARIS_PASSWORD}
+      POSTGRES_DB: ${PG_POLARIS_DB}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - lakehouse-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U polaris"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+
+  # ===================== MINIO =====================
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio-data:/data
+    networks:
+      - lakehouse-net
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web UI
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # Инициализация MinIO (создание buckets)
+  minio-init:
+    image: minio/mc:latest
+    container_name: minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+      mc mb myminio/${MINIO_BUCKET_LAKEHOUSE} --ignore-existing;
+      mc mb myminio/${MINIO_BUCKET_WAREHOUSE} --ignore-existing;
+      mc policy set public myminio/${MINIO_BUCKET_LAKEHOUSE};
+      mc policy set public myminio/${MINIO_BUCKET_WAREHOUSE};
+      echo 'MinIO buckets created successfully';
+      "
+    networks:
+      - lakehouse-net
+
+  # ===================== APACHE POLARIS =====================
+  polaris:
+    image: apache/polaris:latest
+    container_name: polaris
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      POLARIS_SERVER_CONF_TYPE: default
+      POLARIS_PERSISTENCE_TYPE: postgres
+      POLARIS_POSTGRES_HOST: postgres
+      POLARIS_POSTGRES_PORT: 5432
+      POLARIS_POSTGRES_DATABASE: ${PG_POLARIS_DB}
+      POLARIS_POSTGRES_USER: ${PG_POLARIS_USER}
+      POLARIS_POSTGRES_PASSWORD: ${PG_POLARIS_PASSWORD}
+      POLARIS_AUTHENTICATION_ENABLED: "true"
+      POLARIS_AUTHENTICATION_TOKEN_SECRET: "supersecretkey"
+      AWS_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      AWS_REGION: us-east-1
+    ports:
+      - "8181:8181"   # REST API
+      - "8182:8182"   # Management API
+    networks:
+      - lakehouse-net
+    volumes:
+      - ./config/polaris/bootstrap.py:/bootstrap.py
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8181/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Инициализация Polaris (создание каталогов и principal)
+  polaris-init:
+    image: python:3.9-slim
+    container_name: polaris-init
+    depends_on:
+      polaris:
+        condition: service_healthy
+    networks:
+      - lakehouse-net
+    volumes:
+      - ./config/polaris/bootstrap.py:/bootstrap.py
+      - ./init/wait-for-it.sh:/wait-for-it.sh
+    environment:
+      POLARIS_HOST: ${POLARIS_HOST}
+      POLARIS_PORT: ${POLARIS_PORT}
+      POLARIS_ADMIN_USER: ${POLARIS_ADMIN_USER}
+      POLARIS_ADMIN_PASSWORD: ${POLARIS_ADMIN_PASSWORD}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+    command: >
+      sh -c "
+      pip install requests && 
+      python /bootstrap.py
+      "
+
+  # ===================== ZOOKEEPER =====================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+    networks:
+      - lakehouse-net
+    ports:
+      - "2181:2181"
+
+  # ===================== KAFKA =====================
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - lakehouse-net
+    ports:
+      - "9092:9092"
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Инициализация Kafka (создание топиков)
+  kafka-init:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - lakehouse-net
+    entrypoint: >
+      /bin/sh -c "
+      echo 'Creating Kafka topics...';
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic ${KAFKA_TOPIC_RAW_EVENTS} --partitions 3 --replication-factor 1;
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic processed-events --partitions 3 --replication-factor 1;
+      echo 'Topics created successfully';
+      "
+
+  # ===================== KAFKA UI (для мониторинга) =====================
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    ports:
+      - "8080:8080"
+    networks:
+      - lakehouse-net
+
+  # ===================== SPARK MASTER =====================
+  spark-master:
+    image: bitnami/spark:3.5
+    container_name: spark-master
+    environment:
+      SPARK_MODE: master
+      SPARK_RPC_AUTHENTICATION_ENABLED: "no"
+      SPARK_RPC_ENCRYPTION_ENABLED: "no"
+      SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED: "no"
+      SPARK_SSL_ENABLED: "no"
+    ports:
+      - "8081:8080"   # Spark UI
+      - "7077:7077"   # Spark Master
+    volumes:
+      - ./config/spark/conf:/opt/bitnami/spark/conf
+      - ./jars:/opt/bitnami/spark/jars
+    networks:
+      - lakehouse-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ===================== SPARK WORKER =====================
+  spark-worker:
+    image: bitnami/spark:3.5
+    container_name: spark-worker
+    depends_on:
+      spark-master:
+        condition: service_healthy
+    environment:
+      SPARK_MODE: worker
+      SPARK_MASTER_URL: spark://spark-master:7077
+      SPARK_WORKER_MEMORY: 2G
+      SPARK_WORKER_CORES: 2
+      SPARK_RPC_AUTHENTICATION_ENABLED: "no"
+      SPARK_RPC_ENCRYPTION_ENABLED: "no"
+      SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED: "no"
+      SPARK_SSL_ENABLED: "no"
+    volumes:
+      - ./config/spark/conf:/opt/bitnami/spark/conf
+      - ./jars:/opt/bitnami/spark/jars
+      - spark-iceberg-warehouse:/opt/warehouse
+    networks:
+      - lakehouse-net
+
+  # ===================== JUPYTER (для Spark) =====================
+  jupyter:
+    image: jupyter/pyspark-notebook:spark-3.5.0
+    container_name: jupyter
+    depends_on:
+      - spark-master
+    environment:
+      JUPYTER_ENABLE_LAB: "yes"
+      SPARK_MASTER: spark://spark-master:7077
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./notebooks:/home/jovyan/work
+      - ./jars:/home/jovyan/jars
+    networks:
+      - lakehouse-net
+    command: start-notebook.sh --NotebookApp.token='' --NotebookApp.password=''
+
+  # ===================== TRINO =====================
+  trino:
+    image: trinodb/trino:435
+    container_name: trino
+    depends_on:
+      minio:
+        condition: service_healthy
+      polaris:
+        condition: service_healthy
+    ports:
+      - "8082:8080"   # Trino UI
+    volumes:
+      - ./config/trino/catalog:/etc/trino/catalog
+      - ./config/trino/config.properties:/etc/trino/config.properties
+    environment:
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+    networks:
+      - lakehouse-net
+
+  # ===================== POSTGRES для Airflow =====================
+  airflow-postgres:
+    image: postgres:13
+    container_name: airflow-postgres
+    environment:
+      POSTGRES_USER: ${PG_AIRFLOW_USER}
+      POSTGRES_PASSWORD: ${PG_AIRFLOW_PASSWORD}
+      POSTGRES_DB: ${PG_AIRFLOW_DB}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - lakehouse-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===================== AIRFLOW =====================
+  airflow-webserver:
+    image: apache/airflow:2.8.1-python3.9
+    container_name: airflow-webserver
+    depends_on:
+      airflow-postgres:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__WEBSERVER__SECRET_KEY: "supersecretkey"
+      AIRFLOW_CONN_SPARK_DEFAULT: spark://spark-master:7077
+      AIRFLOW_CONN_MINIO: aws://${MINIO_ROOT_USER}:${MINIO_ROOT_PASSWORD}@?endpoint_url=http%3A%2F%2Fminio%3A9000
+    volumes:
+      - ./config/airflow/dags:/opt/airflow/dags
+      - ./config/airflow/logs:/opt/airflow/logs
+      - ./config/airflow/plugins:/opt/airflow/plugins
+      - ./jars:/opt/airflow/jars
+    ports:
+      - "8085:8080"
+    networks:
+      - lakehouse-net
+    command: webserver
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  airflow-scheduler:
+    image: apache/airflow:2.8.1-python3.9
+    container_name: airflow-scheduler
+    depends_on:
+      airflow-webserver:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW_CONN_SPARK_DEFAULT: spark://spark-master:7077
+      AIRFLOW_CONN_MINIO: aws://${MINIO_ROOT_USER}:${MINIO_ROOT_PASSWORD}@?endpoint_url=http%3A%2F%2Fminio%3A9000
+    volumes:
+      - ./config/airflow/dags:/opt/airflow/dags
+      - ./config/airflow/logs:/opt/airflow/logs
+      - ./config/airflow/plugins:/opt/airflow/plugins
+      - ./jars:/opt/airflow/jars
+    networks:
+      - lakehouse-net
+    command: scheduler
