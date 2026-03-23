@@ -1,0 +1,15 @@
+# GUI
+PyQt6
+
+# Базы данных
+SQLAlchemy
+psycopg2-binary
+trino
+pandas
+
+# HTTP клиент (для REST API)
+requests
+
+# Утилиты
+python-dotenv
+pyyaml
