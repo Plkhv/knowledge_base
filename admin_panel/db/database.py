@@ -1,7 +1,10 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker, Session
 from config import Config
 from db.models import Base
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Database:
     _instance = None
@@ -20,8 +23,20 @@ class Database:
             echo=False,
             pool_pre_ping=True
         )
+        
+        # Проверяем, существуют ли таблицы
+        inspector = inspect(self._engine)
+        existing_tables = inspector.get_table_names()
+        
+        if not existing_tables:
+            # Только если таблиц нет, создаём их
+            logger.info("Creating database tables...")
+            Base.metadata.create_all(self._engine)
+            logger.info("Tables created successfully")
+        else:
+            logger.info(f"Tables already exist: {existing_tables}")
+        
         self._session_factory = sessionmaker(bind=self._engine)
-        Base.metadata.create_all(self._engine)
     
     @property
     def session(self) -> Session:

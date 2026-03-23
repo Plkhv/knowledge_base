@@ -48,7 +48,7 @@ class LakehouseService:
     def query_table(self, table_name: str, limit: int = 100, offset: int = 0) -> pd.DataFrame:
         """Выполнить SELECT запрос к таблице"""
         try:
-            query = f"SELECT * FROM {table_name} LIMIT {limit} OFFSET {offset}"
+            query = f"SELECT * FROM {table_name} LIMIT {limit}"
             return pd.read_sql(query, self._get_connection())
         except Exception as e:
             logger.error(f"Error querying table {table_name}: {e}")
