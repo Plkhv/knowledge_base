@@ -1,0 +1,205 @@
+networks:
+  lakehouse-net:
+    driver: bridge
+
+volumes:
+  minio-data:
+  postgres-data:
+  kafka-data:
+  zookeeper-data:
+
+services:
+  # ===================== POSTGRES =====================
+  postgres:
+    image: postgres:15
+    platform: linux/amd64
+    container_name: postgres
+    environment:
+      POSTGRES_USER: polaris
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: polaris
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - lakehouse-net
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U polaris"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===================== MINIO =====================
+  minio:
+    image: minio/minio:RELEASE.2024-01-18T22-51-28Z 
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password
+    volumes:
+      - minio-data:/data
+    networks:
+      - lakehouse-net
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    #healthcheck:
+    #  test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+    #  interval: 30s
+    #  timeout: 30s       
+    #  retries: 10        
+    #  start_period: 60s  
+
+  # Инициализация MinIO
+  minio-init:
+    image: minio/mc:latest
+    container_name: minio-init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set myminio http://minio:9000 admin password;
+      mc mb myminio/lakehouse --ignore-existing;
+      mc mb myminio/warehouse --ignore-existing;
+      echo 'MinIO buckets created';
+      "
+    networks:
+      - lakehouse-net
+
+  # ===================== ZOOKEEPER =====================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+    networks:
+      - lakehouse-net
+    ports:
+      - "2181:2181"
+
+  # ===================== KAFKA =====================
+  kafka:
+    image: confluentinc/cp-kafka:5.5.3
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      #KAFKA_HEAP_OPTS: "-Xmx512M -Xms256M"           # ← ограничение памяти
+      #KAFKA_JVM_PERFORMANCE_OPTS: "-server -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - lakehouse-net
+    ports:
+      - "9092:9092"
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Инициализация Kafka
+  kafka-init:
+    image: confluentinc/cp-kafka:5.5.3
+    container_name: kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - lakehouse-net
+    entrypoint: >
+      /bin/sh -c "
+      echo 'Creating Kafka topics...';
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic raw-incident-events --partitions 3 --replication-factor 1;
+      echo 'Topics created';
+      "
+
+  # ===================== KAFKA UI =====================
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    ports:
+      - "8080:8080"
+    networks:
+      - lakehouse-net
+
+  # ===================== NESSIE =====================
+  nessie:
+    image: projectnessie/nessie:latest
+    container_name: nessie
+    depends_on:
+      - minio
+    environment:
+      # Настройки хранения метаданных в MinIO
+      QUARKUS_PROFILE: s3
+      QUARKUS_S3_AWS_CREDENTIALS_TYPE: static
+      QUARKUS_S3_AWS_CREDENTIALS_STATIC_PROVIDER_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      QUARKUS_S3_AWS_CREDENTIALS_STATIC_PROVIDER_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      QUARKUS_S3_ENDPOINT_OVERRIDE: http://minio:9000
+      QUARKUS_S3_PATH_STYLE_ACCESS: "true"
+      NESSIE_VERSION_STORE_TYPE: IN_MEMORY
+    ports:
+      - "19120:19120"
+    networks:
+      - lakehouse-net
+
+  # ===================== TRINO =====================
+  trino:
+    image: trinodb/trino:480
+    container_name: trino
+    depends_on:
+      - nessie
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./config/trino/catalog:/etc/trino/catalog
+    networks:
+      - lakehouse-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/v1/info"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ===================== АДМИН-ПАНЕЛЬ =====================
+  #admin-panel:
+  #  build:
+  #    context: ../admin_panel
+  #    dockerfile: Dockerfile
+  #  container_name: admin-panel
+  #  depends_on:
+  #    postgres:
+  #      condition: service_healthy
+  #    trino:
+  #      condition: service_healthy
+  #  environment:
+  #    # PostgreSQL
+  #    PG_HOST: postgres
+  #    PG_PORT: 5432
+  #    PG_DATABASE: polaris
+  #    PG_USER: polaris
+  #    PG_PASSWORD: password
+  #    # Trino
+  #    TRINO_HOST: trino
+  #    TRINO_PORT: 8080
+  #    TRINO_CATALOG: memory
+  #    TRINO_SCHEMA: lakehouse
+  #  ports:
+  #    - "8086:8086"  # GUI будет доступен через VNC или веб? Пока просто порт
+  #  networks:
+  #    - lakehouse-net
