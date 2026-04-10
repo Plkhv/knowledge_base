@@ -175,31 +175,3 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-
-  # ===================== АДМИН-ПАНЕЛЬ =====================
-  #admin-panel:
-  #  build:
-  #    context: ../admin_panel
-  #    dockerfile: Dockerfile
-  #  container_name: admin-panel
-  #  depends_on:
-  #    postgres:
-  #      condition: service_healthy
-  #    trino:
-  #      condition: service_healthy
-  #  environment:
-  #    # PostgreSQL
-  #    PG_HOST: postgres
-  #    PG_PORT: 5432
-  #    PG_DATABASE: polaris
-  #    PG_USER: polaris
-  #    PG_PASSWORD: password
-  #    # Trino
-  #    TRINO_HOST: trino
-  #    TRINO_PORT: 8080
-  #    TRINO_CATALOG: memory
-  #    TRINO_SCHEMA: lakehouse
-  #  ports:
-  #    - "8086:8086"  # GUI будет доступен через VNC или веб? Пока просто порт
-  #  networks:
-  #    - lakehouse-net
