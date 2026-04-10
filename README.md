@@ -27,9 +27,13 @@ python .\load_synthetic_to_lakehouse.py
 1) Создать соединение Trino
 
 2) Внести такие настройки
+
 connected by: Host
+
 Host: localhost port: 8082
+
 DB/Schema: lakehouse
 
 user: admin
+
 password: *оставить пустым*
