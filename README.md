@@ -20,6 +20,7 @@ docker-compose up -d
 3) Готово
 
 Для загрузки тестовых данных запустить скрипт в папке .\admin_panel\scripts
+
 python .\load_synthetic_to_lakehouse.py
 
 ## Подключение к Trino через Dbeaver
