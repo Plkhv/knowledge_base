@@ -7,6 +7,7 @@ volumes:
   postgres-data:
   kafka-data:
   zookeeper-data:
+  spark-data:
 
 services:
   # ===================== POSTGRES =====================
@@ -69,74 +70,74 @@ services:
     networks:
       - lakehouse-net
 
-  # ===================== ZOOKEEPER =====================
-  zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-    container_name: zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    volumes:
-      - zookeeper-data:/var/lib/zookeeper/data
-    networks:
-      - lakehouse-net
-    ports:
-      - "2181:2181"
-
-  # ===================== KAFKA =====================
-  kafka:
-    image: confluentinc/cp-kafka:5.5.3
-    container_name: kafka
-    depends_on:
-      - zookeeper
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      #KAFKA_HEAP_OPTS: "-Xmx512M -Xms256M"           # ← ограничение памяти
-      #KAFKA_JVM_PERFORMANCE_OPTS: "-server -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC"
-    volumes:
-      - kafka-data:/var/lib/kafka/data
-    networks:
-      - lakehouse-net
-    ports:
-      - "9092:9092"
-    healthcheck:
-      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
-  # Инициализация Kafka
-  kafka-init:
-    image: confluentinc/cp-kafka:5.5.3
-    container_name: kafka-init
-    depends_on:
-      kafka:
-        condition: service_healthy
-    networks:
-      - lakehouse-net
-    entrypoint: >
-      /bin/sh -c "
-      echo 'Creating Kafka topics...';
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic raw-incident-events --partitions 3 --replication-factor 1;
-      echo 'Topics created';
-      "
-
-  # ===================== KAFKA UI =====================
-  kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    container_name: kafka-ui
-    depends_on:
-      - kafka
-    environment:
-      KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-    ports:
-      - "8080:8080"
-    networks:
-      - lakehouse-net
+#  # ===================== ZOOKEEPER =====================
+#  zookeeper:
+#    image: confluentinc/cp-zookeeper:latest
+#    container_name: zookeeper
+#    environment:
+#      ZOOKEEPER_CLIENT_PORT: 2181
+#      ZOOKEEPER_TICK_TIME: 2000
+#    volumes:
+#      - zookeeper-data:/var/lib/zookeeper/data
+#    networks:
+#      - lakehouse-net
+#    ports:
+#      - "2181:2181"
+#
+#  # ===================== KAFKA =====================
+#  kafka:
+#    image: confluentinc/cp-kafka:5.5.3
+#    container_name: kafka
+#    depends_on:
+#      - zookeeper
+#    environment:
+#      KAFKA_BROKER_ID: 1
+#      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+#      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+#      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+#      #KAFKA_HEAP_OPTS: "-Xmx512M -Xms256M"           # ← ограничение памяти
+#      #KAFKA_JVM_PERFORMANCE_OPTS: "-server -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC"
+#    volumes:
+#      - kafka-data:/var/lib/kafka/data
+#    networks:
+#      - lakehouse-net
+#    ports:
+#      - "9092:9092"
+#    healthcheck:
+#      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 5
+#
+#  # Инициализация Kafka
+#  kafka-init:
+#    image: confluentinc/cp-kafka:5.5.3
+#    container_name: kafka-init
+#    depends_on:
+#      kafka:
+#        condition: service_healthy
+#    networks:
+#      - lakehouse-net
+#    entrypoint: >
+#      /bin/sh -c "
+#      echo 'Creating Kafka topics...';
+#      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic raw-incident-events --partitions 3 --replication-factor 1;
+#      echo 'Topics created';
+#      "
+#
+#  # ===================== KAFKA UI =====================
+#  kafka-ui:
+#    image: provectuslabs/kafka-ui:latest
+#    container_name: kafka-ui
+#    depends_on:
+#      - kafka
+#    environment:
+#      KAFKA_CLUSTERS_0_NAME: local
+#      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+#    ports:
+#      - "8080:8080"
+#    networks:
+#      - lakehouse-net
 
   # ===================== NESSIE =====================
   nessie:
@@ -148,8 +149,8 @@ services:
       # Настройки хранения метаданных в MinIO
       QUARKUS_PROFILE: s3
       QUARKUS_S3_AWS_CREDENTIALS_TYPE: static
-      QUARKUS_S3_AWS_CREDENTIALS_STATIC_PROVIDER_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
-      QUARKUS_S3_AWS_CREDENTIALS_STATIC_PROVIDER_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      QUARKUS_S3_AWS_CREDENTIALS_STATIC_PROVIDER_ACCESS_KEY_ID: admin
+      QUARKUS_S3_AWS_CREDENTIALS_STATIC_PROVIDER_SECRET_ACCESS_KEY: password
       QUARKUS_S3_ENDPOINT_OVERRIDE: http://minio:9000
       QUARKUS_S3_PATH_STYLE_ACCESS: "true"
       NESSIE_VERSION_STORE_TYPE: IN_MEMORY
@@ -175,3 +176,124 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+
+  # ===================== SPARK MASTER =====================
+  spark-master:
+    image: spark:python3
+    container_name: spark-master
+    environment:
+      - SPARK_MODE=master
+      - SPARK_MASTER_HOST=spark-master
+      - SPARK_MASTER_PORT=7077
+      - SPARK_MASTER_WEBUI_PORT=8083
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      # Настройки для MinIO
+      - SPARK_HADOOP_AWS_ACCESS_KEY=admin
+      - SPARK_HADOOP_AWS_SECRET_KEY=password
+      - SPARK_HADOOP_AWS_ENDPOINT=http://minio:9000
+    volumes:
+      - spark-data:/bitnami
+      - ./spark-apps:/opt/spark-apps
+      - ./spark-jars:/opt/spark-jars
+    ports:
+      - "7077:7077"
+      - "8083:8083"
+    networks:
+      - lakehouse-net
+
+  # ===================== SPARK WORKER 1 =====================
+  spark-worker-1:
+    image: spark:python3
+    container_name: spark-worker-1
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_CORES=2
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      # Настройки для MinIO
+      - SPARK_HADOOP_AWS_ACCESS_KEY=admin
+      - SPARK_HADOOP_AWS_SECRET_KEY=password
+      - SPARK_HADOOP_AWS_ENDPOINT=http://minio:9000
+    volumes:
+      - ./spark-apps:/opt/spark-apps
+      - ./spark-jars:/opt/spark-jars
+    ports:
+      - "8084:8081"
+    networks:
+      - lakehouse-net
+
+  # ===================== SPARK WORKER 2 =====================
+  spark-worker-2:
+    image: spark:python3
+    container_name: spark-worker-2
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_CORES=2
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      # Настройки для MinIO
+      - SPARK_HADOOP_AWS_ACCESS_KEY=admin
+      - SPARK_HADOOP_AWS_SECRET_KEY=password
+      - SPARK_HADOOP_AWS_ENDPOINT=http://minio:9000
+    volumes:
+      - ./spark-apps:/opt/spark-apps
+      - ./spark-jars:/opt/spark-jars
+    ports:
+      - "8085:8081"
+    networks:
+      - lakehouse-net
+
+  # ===================== SPARK HISTORY SERVER =====================
+  spark-history-server:
+    image: spark:python3
+    container_name: spark-history-server
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MODE=history
+      - SPARK_HISTORY_FS_LOG_DIR=s3a://spark-events/
+      # Настройки для MinIO
+      - SPARK_HADOOP_AWS_ACCESS_KEY=admin
+      - SPARK_HADOOP_AWS_SECRET_KEY=password
+      - SPARK_HADOOP_AWS_ENDPOINT=http://minio:9000
+    volumes:
+      - ./spark-jars:/opt/spark-jars
+    ports:
+      - "18080:18080"
+    networks:
+      - lakehouse-net
+
+  # ===================== JUPYTER (для разработки Spark-приложений) =====================
+  jupyter:
+    image: jupyter/pyspark-notebook:latest
+    container_name: jupyter
+    depends_on:
+      - spark-master
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - SPARK_MASTER=spark://spark-master:7077
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_ENDPOINT_URL=http://minio:9000
+    volumes:
+      - ./notebooks:/home/jovyan/work
+      - ./spark-jars:/home/jovyan/jars
+    ports:
+      - "8888:8888"
+    networks:
+      - lakehouse-net
