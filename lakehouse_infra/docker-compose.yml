@@ -31,6 +31,19 @@ services:
       timeout: 5s
       retries: 5
 
+  postgres-init:
+    image: postgres:15
+    container_name: postgres-init
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lakehouse-net
+    entrypoint: >
+      /bin/bash -c "
+      PGPASSWORD=password psql -h postgres -U polaris -d postgres -c 'CREATE DATABASE airflow;'
+      echo 'Airflow database created'
+      "
   # ===================== MINIO =====================
   minio:
     image: minio/minio:RELEASE.2024-01-18T22-51-28Z 
@@ -297,3 +310,27 @@ services:
       - "8888:8888"
     networks:
       - lakehouse-net
+
+  airflow-standalone:
+    image: apache/airflow:2.10.3-python3.11
+    container_name: airflow-standalone
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://polaris:password@postgres:5432/airflow
+      - AIRFLOW__CORE__FERNET_KEY=FB0o_zt4e3ZiqP4dL91V5Np_T7Mwz0Za-O8lF0ZgTfQ=
+      - AIRFLOW__WEBSERVER__RBAC=True
+      - _AIRFLOW_DB_UPGRADE=True
+      - _AIRFLOW_WWW_USER_CREATE=True
+      - _AIRFLOW_WWW_USER_USERNAME=admin
+      - _AIRFLOW_WWW_USER_PASSWORD=admin
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+    ports:
+      - "8080:8080"
+    networks:
+      - lakehouse-net
+    command: standalone
