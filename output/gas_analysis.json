@@ -1,0 +1,110 @@
+[
+  {
+    "measurement_id": "GAS-00001",
+    "incident_id": "INC-2023-001",
+    "location": "--------------",
+    "measurement_dttm": null,
+    "ch4_percent": -100000000,
+    "air_velocity_mps": null,
+    "measurement_height_cm": 0.0,
+    "is_anomaly": 0,
+    "note": "------------",
+    "_source_file": "gas_measurements_42K2_20231025.txt"
+  },
+  {
+    "measurement_id": "GAS-00002",
+    "incident_id": "INC-2023-001",
+    "location": "Перемычка №1409 (ВШ 42К3-в)",
+    "measurement_dttm": null,
+    "ch4_percent": 1.7,
+    "air_velocity_mps": null,
+    "measurement_height_cm": 0.0,
+    "is_anomaly": 1,
+    "note": "",
+    "_source_file": "gas_measurements_42K2_20231025.txt"
+  },
+  {
+    "measurement_id": "GAS-00003",
+    "incident_id": "INC-2023-001",
+    "location": "Перемычка №1576 (ВШ 41К3-в)",
+    "measurement_dttm": null,
+    "ch4_percent": 5.0,
+    "air_velocity_mps": null,
+    "measurement_height_cm": 0.0,
+    "is_anomaly": 1,
+    "note": "",
+    "_source_file": "gas_measurements_42K2_20231025.txt"
+  },
+  {
+    "measurement_id": "GAS-00004",
+    "incident_id": "INC-2023-001",
+    "location": "--------------",
+    "measurement_dttm": null,
+    "ch4_percent": -100000000,
+    "air_velocity_mps": null,
+    "measurement_height_cm": 0.0,
+    "is_anomaly": 0,
+    "note": "------------",
+    "_source_file": "gas_measurements_48K3_20231024.txt"
+  },
+  {
+    "measurement_id": "GAS-00005",
+    "incident_id": "INC-2023-001",
+    "location": "Перемычка №1640",
+    "measurement_dttm": null,
+    "ch4_percent": 34.1,
+    "air_velocity_mps": null,
+    "measurement_height_cm": 0.0,
+    "is_anomaly": 1,
+    "note": "ВШ 48К3-з",
+    "_source_file": "gas_measurements_48K3_20231024.txt"
+  },
+  {
+    "measurement_id": "GAS-00006",
+    "incident_id": "INC-2023-001",
+    "location": "Перемычка №1641",
+    "measurement_dttm": null,
+    "ch4_percent": 9.8,
+    "air_velocity_mps": null,
+    "measurement_height_cm": 0.0,
+    "is_anomaly": 1,
+    "note": "КШ 48К3-з",
+    "_source_file": "gas_measurements_48K3_20231024.txt"
+  },
+  {
+    "measurement_id": "GAS-00007",
+    "incident_id": "INC-2023-001",
+    "location": "Перемычка №1644",
+    "measurement_dttm": null,
+    "ch4_percent": 9.0,
+    "air_velocity_mps": null,
+    "measurement_height_cm": 0.0,
+    "is_anomaly": 1,
+    "note": "сбойка №3",
+    "_source_file": "gas_measurements_48K3_20231024.txt"
+  },
+  {
+    "measurement_id": "GAS-00008",
+    "incident_id": "INC-2023-001",
+    "location": "Перемычка №1650",
+    "measurement_dttm": null,
+    "ch4_percent": 9.5,
+    "air_velocity_mps": null,
+    "measurement_height_cm": 0.0,
+    "is_anomaly": 1,
+    "note": "сбойка №9",
+    "_source_file": "gas_measurements_48K3_20231024.txt"
+  },
+  {
+    "measurement_id": "GAS-00009",
+    "incident_id": "INC-2023-001",
+    "location": "Перемычка №1651",
+    "measurement_dttm": null,
+    "ch4_percent": 9.2,
+    "air_velocity_mps": null,
+    "measurement_height_cm": 0.0,
+    "is_anomaly": 1,
+    "note": "сбойка №10",
+    "_source_file": "gas_measurements_48K3_20231024.txt"
+  }
+]

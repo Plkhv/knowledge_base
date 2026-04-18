@@ -1,0 +1,552 @@
+[
+  {
+    "area_id": "AREA-00001",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Лава 48",
+    "damage_type": "первичный взрыв",
+    "damage_description": "очаг взрыва, концентрация CH4 9.5%",
+    "is_primary_blast_zone": 1,
+    "geo_metca": null,
+    "_source_file": "explosion_model_48K3.txt"
+  },
+  {
+    "area_id": "AREA-00002",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Лава 48 К3-з (вся)",
+    "damage_type": "поражение ударной волной",
+    "damage_description": "зона поражения: Лава 48 К3-з (вся)",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "explosion_model_48K3.txt"
+  },
+  {
+    "area_id": "AREA-00003",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Конвейерный штрек 48 К3-з (до сбойки №14)",
+    "damage_type": "поражение ударной волной",
+    "damage_description": "зона поражения: Конвейерный штрек 48 К3-з (до сбойки №14)",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "explosion_model_48K3.txt"
+  },
+  {
+    "area_id": "AREA-00004",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Вентиляционный штрек 48 К3-з (до перемычки №1640)",
+    "damage_type": "поражение ударной волной",
+    "damage_description": "зона поражения: Вентиляционный штрек 48 К3-з (до перемычки №1640)",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "explosion_model_48K3.txt"
+  },
+  {
+    "area_id": "AREA-00005",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Сбойка №14",
+    "damage_type": "поражение ударной волной",
+    "damage_description": "зона поражения: Сбойка №14",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "explosion_model_48K3.txt"
+  },
+  {
+    "area_id": "AREA-00006",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Вентиляционный штрек 49 К3-з (начальный участок)",
+    "damage_type": "поражение ударной волной",
+    "damage_description": "зона поражения: Вентиляционный штрек 49 К3-з (начальный участок)",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "explosion_model_48K3.txt"
+  },
+  {
+    "area_id": "AREA-00007",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Вентиляционный уклон 48 К3-з",
+    "damage_type": "поражение ударной волной",
+    "damage_description": "зона поражения: Вентиляционный уклон 48 К3-з",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "explosion_model_48K3.txt"
+  },
+  {
+    "area_id": "AREA-00008",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Конвейерный штрек 47 К3-з (начальный участок)",
+    "damage_type": "поражение ударной волной",
+    "damage_description": "зона поражения: Конвейерный штрек 47 К3-з (начальный участок)",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "explosion_model_48K3.txt"
+  },
+  {
+    "area_id": "AREA-00009",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Лава 48 К3-з",
+    "damage_type": "повреждения",
+    "damage_description": "Лава 48 К3-з:",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00010",
+    "incident_id": "INC-2023-001",
+    "premise_id": "FS300/1.0",
+    "damage_type": "повреждения",
+    "damage_description": "Комбайн FS300/1.0 №423 находится в верхней трети лавы",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00011",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Комбайн FS300/1.0",
+    "damage_type": "механические повреждения",
+    "damage_description": "На козырьке комбайна царапины",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00012",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Лава 48 К3-з (секции 138-148)",
+    "damage_type": "термические повреждения",
+    "damage_description": "На секциях 138-148 термические повреждения пыльников",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00013",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Комбайн FS300/1.0",
+    "damage_type": "повреждения",
+    "damage_description": "Обнаружен аэрозольный баллон с надписью \"огнеопасно\" у комбайна",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00014",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Конвейерный штрек 48 К3-з",
+    "damage_type": "повреждения",
+    "damage_description": "Конвейерный штрек 48 К3-з:",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00015",
+    "incident_id": "INC-2023-001",
+    "premise_id": "-2014",
+    "damage_type": "повреждения",
+    "damage_description": "Обнаружена шлифовальная машинка (тип ИП-2014Б) с 6 дисками",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00016",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Конвейерный штрек 48 К3-з",
+    "damage_type": "механические повреждения",
+    "damage_description": "На скребках конвейера следы износа",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00017",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Конвейерный штрек 48 К3-з",
+    "damage_type": "повреждения",
+    "damage_description": "Соединительные планки (гребенки) покрыты ржавчиной",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00018",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Вентиляционный штрек 48 К3-з",
+    "damage_type": "повреждения",
+    "damage_description": "Вентиляционный штрек 48 К3-з:",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00019",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Перемычка №1640",
+    "damage_type": "деформация",
+    "damage_description": "Перемычка №1640 деформирована",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00020",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Вентиляционный штрек 48 К3-з",
+    "damage_type": "повреждения",
+    "damage_description": "За секциями 143-144 обнаружены химические ампулы (ПУР-патроны)",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00021",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Выработанное пространство",
+    "damage_type": "повреждения",
+    "damage_description": "Выработанное пространство (визуально):",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00022",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Выработанное пространство",
+    "damage_type": "геомеханические нарушения",
+    "damage_description": "За секциями 142-145 в почве трещины",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00023",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Лава 48 К3-з (секции 138-148)",
+    "damage_type": "термические повреждения",
+    "damage_description": "Секции 138-148: оплавление пыльников, выгорание маркировочных табличек",
+    "is_primary_blast_zone": 0,
+    "geo_metca": "секции 138-148",
+    "_source_file": "underground_inspection_diary.txt"
+  },
+  {
+    "area_id": "AREA-00024",
+    "incident_id": "INC-2023-001",
+    "premise_id": "FS300",
+    "damage_type": "механические повреждения",
+    "damage_description": "Комбайн FS300: срезанное крепление на нижнем шнеке, царапины на козырьке",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "underground_inspection_diary.txt"
+  },
+  {
+    "area_id": "AREA-00025",
+    "incident_id": "INC-2023-001",
+    "premise_id": "FFC-8",
+    "damage_type": "механические повреждения",
+    "damage_description": "Конвейер FFC-8: износ скребков, ржавчина на гребенках",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "underground_inspection_diary.txt"
+  },
+  {
+    "area_id": "AREA-00026",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Шлифовальная машинка ИП-2014Б",
+    "damage_type": "повреждения",
+    "damage_description": "Обнаружена шлифовальная машинка с дисками в ящике на КШ",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "underground_inspection_diary.txt"
+  },
+  {
+    "area_id": "AREA-00027",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Лава 48 К3-з",
+    "damage_type": "геомеханические нарушения",
+    "damage_description": "За секциями 142-145: трещины в почве",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "underground_inspection_diary.txt"
+  },
+  {
+    "area_id": "AREA-00028",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Лава 48 К3-з",
+    "damage_type": "повреждения",
+    "damage_description": "За секцией №1: открытое пространство объемом ~6 м³",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "underground_inspection_diary.txt"
+  },
+  {
+    "area_id": "AREA-00029",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Лава 48 К3-з",
+    "damage_type": "повреждения",
+    "damage_description": "Следы горения на почве (обугливание)",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "underground_inspection_diary.txt"
+  },
+  {
+    "area_id": "AREA-00030",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Лава 48 К3-з",
+    "damage_type": "повреждения",
+    "damage_description": "Лава 48 К3-з:",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00031",
+    "incident_id": "INC-2023-001",
+    "premise_id": "FS300/1.0",
+    "damage_type": "повреждения",
+    "damage_description": "Комбайн FS300/1.0 №423 находится в верхней трети лавы",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00032",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Комбайн FS300/1.0",
+    "damage_type": "механические повреждения",
+    "damage_description": "На козырьке комбайна царапины",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00033",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Лава 48 К3-з (секции 138-148)",
+    "damage_type": "термические повреждения",
+    "damage_description": "На секциях 138-148 термические повреждения пыльников",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00034",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Комбайн FS300/1.0",
+    "damage_type": "повреждения",
+    "damage_description": "Обнаружен аэрозольный баллон с надписью \"огнеопасно\" у комбайна",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00035",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Конвейерный штрек 48 К3-з",
+    "damage_type": "повреждения",
+    "damage_description": "Конвейерный штрек 48 К3-з:",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00036",
+    "incident_id": "INC-2023-001",
+    "premise_id": "-2014",
+    "damage_type": "повреждения",
+    "damage_description": "Обнаружена шлифовальная машинка (тип ИП-2014Б) с 6 дисками",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00037",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Конвейерный штрек 48 К3-з",
+    "damage_type": "механические повреждения",
+    "damage_description": "На скребках конвейера следы износа",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00038",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Конвейерный штрек 48 К3-з",
+    "damage_type": "повреждения",
+    "damage_description": "Соединительные планки (гребенки) покрыты ржавчиной",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00039",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Вентиляционный штрек 48 К3-з",
+    "damage_type": "повреждения",
+    "damage_description": "Вентиляционный штрек 48 К3-з:",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00040",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Перемычка №1640",
+    "damage_type": "деформация",
+    "damage_description": "Перемычка №1640 деформирована",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00041",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Вентиляционный штрек 48 К3-з",
+    "damage_type": "повреждения",
+    "damage_description": "За секциями 143-144 обнаружены химические ампулы (ПУР-патроны)",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00042",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Выработанное пространство",
+    "damage_type": "повреждения",
+    "damage_description": "Выработанное пространство (визуально):",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00043",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Выработанное пространство",
+    "damage_type": "геомеханические нарушения",
+    "damage_description": "За секциями 142-145 в почве трещины",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "inspection_act_subcommission2.txt"
+  },
+  {
+    "area_id": "AREA-00044",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Лава 48 К3-з (секции 138-148)",
+    "damage_type": "термические повреждения",
+    "damage_description": "Секции 138-148: оплавление пыльников, выгорание маркировочных табличек",
+    "is_primary_blast_zone": 0,
+    "geo_metca": "секции 138-148",
+    "_source_file": "underground_inspection_diary.txt"
+  },
+  {
+    "area_id": "AREA-00045",
+    "incident_id": "INC-2023-001",
+    "premise_id": "FS300",
+    "damage_type": "механические повреждения",
+    "damage_description": "Комбайн FS300: срезанное крепление на нижнем шнеке, царапины на козырьке",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "underground_inspection_diary.txt"
+  },
+  {
+    "area_id": "AREA-00046",
+    "incident_id": "INC-2023-001",
+    "premise_id": "FFC-8",
+    "damage_type": "механические повреждения",
+    "damage_description": "Конвейер FFC-8: износ скребков, ржавчина на гребенках",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "underground_inspection_diary.txt"
+  },
+  {
+    "area_id": "AREA-00047",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Шлифовальная машинка ИП-2014Б",
+    "damage_type": "повреждения",
+    "damage_description": "Обнаружена шлифовальная машинка с дисками в ящике на КШ",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "underground_inspection_diary.txt"
+  },
+  {
+    "area_id": "AREA-00048",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Лава 48 К3-з",
+    "damage_type": "повреждения",
+    "damage_description": "Камера P1b: чисто, следов копоти и нагара нет",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "underground_inspection_diary.txt"
+  },
+  {
+    "area_id": "AREA-00049",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Лава 48 К3-з",
+    "damage_type": "повреждения",
+    "damage_description": "Кабели целые",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "underground_inspection_diary.txt"
+  },
+  {
+    "area_id": "AREA-00050",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Лава 48 К3-з",
+    "damage_type": "повреждения",
+    "damage_description": "Взрывозащита не нарушена",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "underground_inspection_diary.txt"
+  },
+  {
+    "area_id": "AREA-00051",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Лава 48 К3-з",
+    "damage_type": "повреждения",
+    "damage_description": "Камера двигателя: чисто, следов аварийных режимов нет",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "underground_inspection_diary.txt"
+  },
+  {
+    "area_id": "AREA-00052",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Лава 48 К3-з",
+    "damage_type": "повреждения",
+    "damage_description": "Обмотки целые, мегаомметрия 40 МОм",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "underground_inspection_diary.txt"
+  },
+  {
+    "area_id": "AREA-00053",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Лава 48 К3-з",
+    "damage_type": "геомеханические нарушения",
+    "damage_description": "За секциями 142-145: трещины в почве",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "underground_inspection_diary.txt"
+  },
+  {
+    "area_id": "AREA-00054",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Лава 48 К3-з",
+    "damage_type": "повреждения",
+    "damage_description": "За секцией №1: открытое пространство объемом ~6 м³",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "underground_inspection_diary.txt"
+  },
+  {
+    "area_id": "AREA-00055",
+    "incident_id": "INC-2023-001",
+    "premise_id": "Лава 48 К3-з",
+    "damage_type": "повреждения",
+    "damage_description": "Следы горения на почве (обугливание)",
+    "is_primary_blast_zone": 0,
+    "geo_metca": null,
+    "_source_file": "underground_inspection_diary.txt"
+  }
+]

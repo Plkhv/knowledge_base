@@ -1,0 +1,242 @@
+[
+  {
+    "sensor_id": "M37_2",
+    "sensor_type": "CH4",
+    "model": null,
+    "location": "ВШ 48К3-",
+    "measurement_range": null,
+    "unit": "%",
+    "last_calibration_date": null,
+    "battery_life_hours": null,
+    "actual_battery_time_at_incident": 680.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "OY1_36",
+    "sensor_type": "CO",
+    "model": null,
+    "location": "околоствольный двор",
+    "measurement_range": null,
+    "unit": "%",
+    "last_calibration_date": null,
+    "battery_life_hours": null,
+    "actual_battery_time_at_incident": 700.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "C3_34",
+    "sensor_type": "SPEED",
+    "model": null,
+    "location": null,
+    "measurement_range": null,
+    "unit": "m/s",
+    "last_calibration_date": null,
+    "battery_life_hours": null,
+    "actual_battery_time_at_incident": 980.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "M33_2",
+    "sensor_type": "CH4",
+    "model": null,
+    "location": "исходящая струя",
+    "measurement_range": null,
+    "unit": "%",
+    "last_calibration_date": null,
+    "battery_life_hours": null,
+    "actual_battery_time_at_incident": 45.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "M3_33",
+    "sensor_type": "CH4",
+    "model": null,
+    "location": null,
+    "measurement_range": null,
+    "unit": "%",
+    "last_calibration_date": null,
+    "battery_life_hours": null,
+    "actual_battery_time_at_incident": 45.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "OY1_32",
+    "sensor_type": "CO",
+    "model": null,
+    "location": "свежая струя",
+    "measurement_range": null,
+    "unit": "%",
+    "last_calibration_date": null,
+    "battery_life_hours": null,
+    "actual_battery_time_at_incident": 700.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "M31_2",
+    "sensor_type": "CH4",
+    "model": null,
+    "location": "КШ 48К3-",
+    "measurement_range": null,
+    "unit": "%",
+    "last_calibration_date": null,
+    "battery_life_hours": null,
+    "actual_battery_time_at_incident": 685.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "OY32_4",
+    "sensor_type": "CO",
+    "model": null,
+    "location": "КШ 42К2-",
+    "measurement_range": null,
+    "unit": "%",
+    "last_calibration_date": null,
+    "battery_life_hours": null,
+    "actual_battery_time_at_incident": 45.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "OY42_2",
+    "sensor_type": "CO",
+    "model": null,
+    "location": "камера смешения",
+    "measurement_range": null,
+    "unit": "%",
+    "last_calibration_date": null,
+    "battery_life_hours": null,
+    "actual_battery_time_at_incident": 675.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "C1_36",
+    "sensor_type": "SPEED",
+    "model": null,
+    "location": "околоствольный двор",
+    "measurement_range": null,
+    "unit": "m/s",
+    "last_calibration_date": null,
+    "battery_life_hours": null,
+    "actual_battery_time_at_incident": 980.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "M34_2",
+    "sensor_type": "CH4",
+    "model": null,
+    "location": "КШ 48К3-",
+    "measurement_range": null,
+    "unit": "%",
+    "last_calibration_date": null,
+    "battery_life_hours": null,
+    "actual_battery_time_at_incident": 690.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "M44_2",
+    "sensor_type": "CH4",
+    "model": null,
+    "location": "камера смешения",
+    "measurement_range": null,
+    "unit": "%",
+    "last_calibration_date": null,
+    "battery_life_hours": null,
+    "actual_battery_time_at_incident": 680.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "OY32_2",
+    "sensor_type": "CO",
+    "model": null,
+    "location": "КШ 48К3-",
+    "measurement_range": null,
+    "unit": "%",
+    "last_calibration_date": null,
+    "battery_life_hours": null,
+    "actual_battery_time_at_incident": 670.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "-----------",
+    "sensor_type": "-----",
+    "actual_battery_time_at_incident": -100000000,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "M37_2",
+    "sensor_type": "CH4",
+    "actual_battery_time_at_incident": 680.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "M34_2",
+    "sensor_type": "CH4",
+    "actual_battery_time_at_incident": 690.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "M31_2",
+    "sensor_type": "CH4",
+    "actual_battery_time_at_incident": 685.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "OY32_2",
+    "sensor_type": "CO",
+    "actual_battery_time_at_incident": 670.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "OY42_2",
+    "sensor_type": "CO",
+    "actual_battery_time_at_incident": 675.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "M44_2",
+    "sensor_type": "CH4",
+    "actual_battery_time_at_incident": 680.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "OY1_32",
+    "sensor_type": "CO",
+    "actual_battery_time_at_incident": 700.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "C1_36",
+    "sensor_type": "SPEED",
+    "actual_battery_time_at_incident": 980.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "M33_2",
+    "sensor_type": "CH4",
+    "actual_battery_time_at_incident": 45.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "OY32_4",
+    "sensor_type": "CO",
+    "actual_battery_time_at_incident": 45.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "M3_33",
+    "sensor_type": "CH4",
+    "actual_battery_time_at_incident": 45.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "OY1_36",
+    "sensor_type": "CO",
+    "actual_battery_time_at_incident": 700.0,
+    "_source_file": "sensors_incident_report.txt"
+  },
+  {
+    "sensor_id": "C3_34",
+    "sensor_type": "SPEED",
+    "actual_battery_time_at_incident": 980.0,
+    "_source_file": "sensors_incident_report.txt"
+  }
+]
