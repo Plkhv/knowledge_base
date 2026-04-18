@@ -1,0 +1,13 @@
+[
+  {
+    "certificate_id": "CERT-00002",
+    "equipment_id": null,
+    "certificate_number": "KZ 3 110 00650",
+    "certificate_type": "сертификат",
+    "issuing_body": "Комитет по стандартизации РК",
+    "issue_date": "2020-12-20",
+    "expiry_date": "2024-12-19",
+    "is_valid_at_incident": null,
+    "_source_file": "certificates_equipment.txt"
+  }
+]

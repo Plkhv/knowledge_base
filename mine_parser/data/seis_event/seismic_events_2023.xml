@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<earthquakes>
+  <event>
+    <event_id>S-2023-001</event_id>
+    <event_dttm>2023-10-28T02:43:49</event_dttm>
+    <latitude>49.8236</latitude>
+    <longitude>73.1241</longitude>
+    <depth_km>5.2</depth_km>
+    <magnitude>1.8</magnitude>
+    <energy_class>8.5</energy_class>
+    <source>СОМЭ</source>
+  </event>
+  <event>
+    <event_id>S-2023-002</event_id>
+    <event_dttm>2023-10-28T02:44:00</event_dttm>
+    <latitude>49.8215</latitude>
+    <longitude>73.1258</longitude>
+    <depth_km>4.9</depth_km>
+    <magnitude>1.6</magnitude>
+    <energy_class>7.9</energy_class>
+    <source>СОМЭ</source>
+  </event>
+</earthquakes>

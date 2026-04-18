@@ -1,0 +1,501 @@
+{
+  "timestamp": "2026-04-18T13:06:48.623911",
+  "input_directory": "mine_parser\\data",
+  "output_directory": "output",
+  "extensions": [
+    ".txt",
+    ".csv",
+    ".json",
+    ".xml",
+    ".xlsx",
+    ".xls"
+  ],
+  "stats": {
+    "files_processed": 50,
+    "files_failed": 0,
+    "total_records": 11323,
+    "by_table": {
+      "affected_areas": 55,
+      "hypotesis_prove_facts": 652,
+      "equipment": 17,
+      "inspection_description": 52,
+      "gas_analysis": 9,
+      "air_analysis": 16,
+      "chronology_incident": 9,
+      "company_description": 2,
+      "employee": 56,
+      "equipment_certificate": 1,
+      "equipment_issue_log": 25,
+      "geological_structure": 3,
+      "incident_description": 1,
+      "equipment_maintenance": 31,
+      "regulatory_document": 1,
+      "premise_parameters": 23,
+      "premise": 37,
+      "seismic_event": 10,
+      "sensor_record": 19,
+      "sensor_reestr": 27,
+      "witness_statement": 2,
+      "expert_dictionary": 10275
+    },
+    "by_file": [
+      {
+        "file": "aff_areas\\explosion_model_48K3.txt",
+        "tables": [
+          "affected_areas(8)",
+          "hypotesis_prove_facts(3)"
+        ],
+        "records": 11,
+        "status": "success"
+      },
+      {
+        "file": "aff_areas\\inspection_act_subcommission2.txt",
+        "tables": [
+          "equipment(1)",
+          "affected_areas(14)",
+          "inspection_description(15)",
+          "hypotesis_prove_facts(3)"
+        ],
+        "records": 33,
+        "status": "success"
+      },
+      {
+        "file": "aff_areas\\underground_inspection_diary.txt",
+        "tables": [
+          "equipment(1)",
+          "affected_areas(7)",
+          "inspection_description(8)",
+          "hypotesis_prove_facts(1)"
+        ],
+        "records": 17,
+        "status": "success"
+      },
+      {
+        "file": "analysis\\gas_measurements_42K2_20231025.txt",
+        "tables": [
+          "gas_analysis(3)",
+          "hypotesis_prove_facts(3)"
+        ],
+        "records": 6,
+        "status": "success"
+      },
+      {
+        "file": "analysis\\gas_measurements_48K3_20231024.txt",
+        "tables": [
+          "gas_analysis(6)",
+          "hypotesis_prove_facts(3)"
+        ],
+        "records": 9,
+        "status": "success"
+      },
+      {
+        "file": "analysis\\pass_air_analysis_2023.txt",
+        "tables": [
+          "air_analysis(16)",
+          "hypotesis_prove_facts(2)"
+        ],
+        "records": 18,
+        "status": "success"
+      },
+      {
+        "file": "audio_transcript.txt",
+        "tables": [
+          "chronology_incident(9)",
+          "hypotesis_prove_facts(4)"
+        ],
+        "records": 13,
+        "status": "success"
+      },
+      {
+        "file": "comp\\company_description.txt",
+        "tables": [
+          "company_description(1)",
+          "hypotesis_prove_facts(4)"
+        ],
+        "records": 5,
+        "status": "success"
+      },
+      {
+        "file": "comp\\mine_passport.txt",
+        "tables": [
+          "hypotesis_prove_facts(2)"
+        ],
+        "records": 2,
+        "status": "success"
+      },
+      {
+        "file": "comp\\mining_plan_2023.txt",
+        "tables": [
+          "company_description(1)"
+        ],
+        "records": 1,
+        "status": "success"
+      },
+      {
+        "file": "empl\\employees_list.txt",
+        "tables": [
+          "employee(11)",
+          "hypotesis_prove_facts(4)"
+        ],
+        "records": 15,
+        "status": "success"
+      },
+      {
+        "file": "empl\\incident_victims.txt",
+        "tables": [
+          "employee(15)",
+          "hypotesis_prove_facts(10)"
+        ],
+        "records": 25,
+        "status": "success"
+      },
+      {
+        "file": "empl\\shift_log_20231028.txt",
+        "tables": [
+          "employee(15)",
+          "hypotesis_prove_facts(1)"
+        ],
+        "records": 16,
+        "status": "success"
+      },
+      {
+        "file": "empl\\work_order_log_202310.txt",
+        "tables": [
+          "employee(15)",
+          "hypotesis_prove_facts(2)"
+        ],
+        "records": 17,
+        "status": "success"
+      },
+      {
+        "file": "eq\\equipment_combine_FS300.txt",
+        "tables": [
+          "equipment(1)",
+          "hypotesis_prove_facts(2)"
+        ],
+        "records": 3,
+        "status": "success"
+      },
+      {
+        "file": "eq\\equipment_conveyor_FFC8.txt",
+        "tables": [
+          "equipment(1)",
+          "hypotesis_prove_facts(1)"
+        ],
+        "records": 2,
+        "status": "success"
+      },
+      {
+        "file": "eq\\equipment_support_Glinik.txt",
+        "tables": [
+          "equipment(1)",
+          "hypotesis_prove_facts(2)"
+        ],
+        "records": 3,
+        "status": "success"
+      },
+      {
+        "file": "eq_cert\\certificate_combine_FS300.txt",
+        "tables": [
+          "equipment(1)",
+          "hypotesis_prove_facts(2)"
+        ],
+        "records": 3,
+        "status": "success"
+      },
+      {
+        "file": "eq_cert\\certificates_equipment.txt",
+        "tables": [
+          "equipment(1)",
+          "equipment_certificate(1)",
+          "hypotesis_prove_facts(3)"
+        ],
+        "records": 5,
+        "status": "success"
+      },
+      {
+        "file": "eq_cert\\protocol_conveyor_FFC8.txt",
+        "tables": [
+          "equipment(1)",
+          "hypotesis_prove_facts(2)"
+        ],
+        "records": 3,
+        "status": "success"
+      },
+      {
+        "file": "equipment\\equipment_issue_log_202310.txt",
+        "tables": [
+          "equipment(1)",
+          "equipment_issue_log(12)",
+          "hypotesis_prove_facts(9)"
+        ],
+        "records": 22,
+        "status": "success"
+      },
+      {
+        "file": "equipment\\safety_equipment_issue.txt",
+        "tables": [
+          "equipment(1)",
+          "equipment_issue_log(7)"
+        ],
+        "records": 8,
+        "status": "success"
+      },
+      {
+        "file": "equipment\\tool_issue_work_order.txt",
+        "tables": [
+          "equipment_issue_log(6)",
+          "hypotesis_prove_facts(5)"
+        ],
+        "records": 11,
+        "status": "success"
+      },
+      {
+        "file": "geo_str\\gas_content_report.txt",
+        "tables": [
+          "hypotesis_prove_facts(4)"
+        ],
+        "records": 4,
+        "status": "success"
+      },
+      {
+        "file": "geo_str\\geological_section_K3.txt",
+        "tables": [
+          "geological_structure(1)",
+          "hypotesis_prove_facts(2)"
+        ],
+        "records": 3,
+        "status": "success"
+      },
+      {
+        "file": "geo_str\\structural_column_K2_K3.txt",
+        "tables": [
+          "geological_structure(2)",
+          "hypotesis_prove_facts(4)"
+        ],
+        "records": 6,
+        "status": "success"
+      },
+      {
+        "file": "incident_summary.txt",
+        "tables": [
+          "incident_description(1)",
+          "hypotesis_prove_facts(3)"
+        ],
+        "records": 4,
+        "status": "success"
+      },
+      {
+        "file": "insp_desc\\inspection_act_subcommission2.txt",
+        "tables": [
+          "equipment(1)",
+          "affected_areas(14)",
+          "inspection_description(15)",
+          "hypotesis_prove_facts(5)"
+        ],
+        "records": 35,
+        "status": "success"
+      },
+      {
+        "file": "insp_desc\\underground_inspection_diary.txt",
+        "tables": [
+          "equipment(1)",
+          "affected_areas(12)",
+          "inspection_description(14)",
+          "hypotesis_prove_facts(1)"
+        ],
+        "records": 28,
+        "status": "success"
+      },
+      {
+        "file": "maint\\maintenance_combine_FS300.txt",
+        "tables": [
+          "equipment(1)",
+          "equipment_maintenance(11)"
+        ],
+        "records": 12,
+        "status": "success"
+      },
+      {
+        "file": "maint\\maintenance_conveyor_FFC8.txt",
+        "tables": [
+          "equipment(1)",
+          "equipment_maintenance(11)",
+          "hypotesis_prove_facts(10)"
+        ],
+        "records": 22,
+        "status": "success"
+      },
+      {
+        "file": "maint\\maintenance_support_Glinik.txt",
+        "tables": [
+          "equipment(1)",
+          "equipment_maintenance(9)"
+        ],
+        "records": 10,
+        "status": "success"
+      },
+      {
+        "file": "norm_doc\\combine_requirements.txt",
+        "tables": [
+          "equipment(1)",
+          "hypotesis_prove_facts(1)"
+        ],
+        "records": 2,
+        "status": "success"
+      },
+      {
+        "file": "norm_doc\\conveyor_requirements.txt",
+        "tables": [
+          "equipment(1)",
+          "hypotesis_prove_facts(1)"
+        ],
+        "records": 2,
+        "status": "success"
+      },
+      {
+        "file": "norm_doc\\dust_control_guidelines_2011.txt",
+        "tables": [
+          "regulatory_document(1)",
+          "hypotesis_prove_facts(3)"
+        ],
+        "records": 4,
+        "status": "success"
+      },
+      {
+        "file": "norm_doc\\safety_standards.txt",
+        "tables": [
+          "hypotesis_prove_facts(4)"
+        ],
+        "records": 4,
+        "status": "success"
+      },
+      {
+        "file": "prem_params\\degassing_measurements_202310.txt",
+        "tables": [
+          "hypotesis_prove_facts(3)"
+        ],
+        "records": 3,
+        "status": "success"
+      },
+      {
+        "file": "prem_params\\dust_control_report_Q3_2023.txt",
+        "tables": [
+          "premise_parameters(4)",
+          "hypotesis_prove_facts(1)"
+        ],
+        "records": 5,
+        "status": "success"
+      },
+      {
+        "file": "prem_params\\ventilation_log_20231020.txt",
+        "tables": [
+          "premise_parameters(9)",
+          "premise(9)",
+          "hypotesis_prove_facts(1)"
+        ],
+        "records": 19,
+        "status": "success"
+      },
+      {
+        "file": "premise\\face_passport_48K3.txt",
+        "tables": [
+          "premise(3)",
+          "hypotesis_prove_facts(1)"
+        ],
+        "records": 4,
+        "status": "success"
+      },
+      {
+        "file": "premise\\premises_list.txt",
+        "tables": [
+          "premise(15)",
+          "hypotesis_prove_facts(2)"
+        ],
+        "records": 17,
+        "status": "success"
+      },
+      {
+        "file": "premise\\ventilation_log_20231020.txt",
+        "tables": [
+          "premise_parameters(10)",
+          "premise(10)",
+          "hypotesis_prove_facts(1)"
+        ],
+        "records": 21,
+        "status": "success"
+      },
+      {
+        "file": "seis_event\\seismic_events_2023.csv",
+        "tables": [
+          "seismic_event(5)",
+          "hypotesis_prove_facts(4)"
+        ],
+        "records": 9,
+        "status": "success"
+      },
+      {
+        "file": "seis_event\\seismic_events_2023.txt",
+        "tables": [
+          "seismic_event(5)",
+          "hypotesis_prove_facts(3)"
+        ],
+        "records": 8,
+        "status": "success"
+      },
+      {
+        "file": "sens_rec\\mine_scada_export_20231025_20231028.csv",
+        "tables": [
+          "sensor_record(19)",
+          "hypotesis_prove_facts(9)"
+        ],
+        "records": 28,
+        "status": "success"
+      },
+      {
+        "file": "sens_reest\\sensors_ASKA_project.txt",
+        "tables": [
+          "hypotesis_prove_facts(9)"
+        ],
+        "records": 9,
+        "status": "success"
+      },
+      {
+        "file": "sens_reest\\sensors_calibration.txt",
+        "tables": [
+          "sensor_reestr(13)",
+          "hypotesis_prove_facts(11)"
+        ],
+        "records": 24,
+        "status": "success"
+      },
+      {
+        "file": "sens_reest\\sensors_incident_report.txt",
+        "tables": [
+          "sensor_reestr(14)",
+          "hypotesis_prove_facts(2)"
+        ],
+        "records": 16,
+        "status": "success"
+      },
+      {
+        "file": "witness_interview.txt",
+        "tables": [
+          "witness_statement(2)",
+          "hypotesis_prove_facts(2)"
+        ],
+        "records": 4,
+        "status": "success"
+      },
+      {
+        "file": "Реестр_26.03.2026_.csv",
+        "tables": [
+          "expert_dictionary(10275)",
+          "hypotesis_prove_facts(497)"
+        ],
+        "records": 10772,
+        "status": "success"
+      }
+    ]
+  }
+}
