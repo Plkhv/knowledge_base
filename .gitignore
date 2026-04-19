@@ -1,0 +1,60 @@
+parsing.log
+spark_example.ipynb
+admin_panel/__pycache__/config.cpython-312.pyc
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Airflow
+airflow/logs/
+airflow/__pycache__/
+
+# Docker
+*.log
+*.pid
+*.pid.lock
+
+# Data files (важные данные не пушим)
+mine_parser/data/
+mine_parser/output/
+archive/
+
+# Spark temp
+spark-data/
+spark-apps/__pycache__/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment variables
+.env
+.env.local
+
+# JAR files (большие файлы)
+*.jar
+spark-jars/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+**/secrets/
+**/.secrets
+
+
+lakehouse_infra/mine_parser/output
