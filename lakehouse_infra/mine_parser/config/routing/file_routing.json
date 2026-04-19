@@ -1,0 +1,208 @@
+{
+  "routing_rules": [
+    {
+      "name_patterns": [
+        "*combine*.txt", "*комбайн*.txt", "*conveyor*.txt", "*конвейер*.txt",
+        "*support*.txt", "*крепь*.txt", "*equipment*.txt", "*паспорт*.txt",
+        "*fs300*.txt", "*ffc8*.txt", "*glinik*.txt", "*spec*.txt",
+        "*maintenance_combine*.txt", "*maintenance_conveyor*.txt", "*maintenance_support*.txt"
+      ],
+      "parser_type": "equipment",
+      "output_table": "equipment",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*certificate*.txt", "*сертификат*.txt", "*protocol*.txt", "*протокол*.txt",
+        "*cert*.txt", "*register*.txt", "*реестр*.txt"
+      ],
+      "parser_type": "certificate",
+      "output_table": "equipment_certificate",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*maintenance*.txt", "*то*.txt", "*журнал*.txt", "*техническое обслуживание*.txt",
+        "*maint*.txt"
+      ],
+      "parser_type": "maintenance",
+      "output_table": "equipment_maintenance",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*sensor*.txt", "*датчик*.txt", "*аска*.txt", "*sensor_reestr*.txt",
+        "*sens_reest*.txt", "*sensors_*.txt", "*калибровк*.txt"
+      ],
+      "parser_type": "sensor_reestr",
+      "output_table": "sensor_reestr",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*scada*.csv", "*sensor_record*.csv", "*trends*.csv", "*equipment_trends*.csv",
+        "*sens_rec*.csv", "*mine_scada*.csv", "*barometric*.csv"
+      ],
+      "parser_type": "sensor_record",
+      "output_table": "sensor_record",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*air_analysis*.txt", "*pass_air*.txt", "*анализ воздуха*.txt",
+        "*извещение*.txt", "*газовый*.txt", "*комир*.txt"
+      ],
+      "parser_type": "air_analysis",
+      "output_table": "air_analysis",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*gas_measurements*.txt", "*замеры*.txt", "*отвод газа*.txt",
+        "*газоносност*.txt"
+      ],
+      "parser_type": "gas_analysis",
+      "output_table": "gas_analysis",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*experiment*.txt", "*протокол*.txt", "*испытани*.txt", "*пур*.txt",
+        "*spark*.txt", "*искрение*.txt", "*микроскоп*.txt", "*friction*.txt"
+      ],
+      "parser_type": "experiment",
+      "output_table": "experiment_protocol",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*ventilation*.txt", "*dust_control*.txt", "*degassing*.txt", "*проветриван*.txt",
+        "*пылевзрыв*.txt", "*дегазац*.txt", "*vacuum_pump*.txt", "*velocity*.txt",
+        "*prem_params*.txt"
+      ],
+      "parser_type": "premise_parameters",
+      "output_table": "premise_parameters",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*issue*.txt", "*выдач*.txt", "*наряд*.txt", "*equipment_issue*.txt",
+        "*safety*.txt", "*work_order*.txt", "*tool*.txt"
+      ],
+      "parser_type": "equipment_issue",
+      "output_table": "equipment_issue_log",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*structural*.txt", "*геологическ*.txt", "*колонк*.txt", "*разрез*.txt",
+        "*газоносност*.txt", "*geological*.txt", "*gas_content*.txt", "*geo_str*.txt"
+      ],
+      "parser_type": "geological",
+      "output_table": "geological_structure",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*guidelines*.txt", "*рекомендац*.txt", "*правила*.txt", "*руководство*.txt",
+        "*стандарт*.txt", "*норматив*.txt", "*regulatory*.txt", "*requirements*.txt",
+        "*safety*.txt", "*norm_doc*.txt", "*combine_requirements*.txt", "*conveyor_requirements*.txt"
+      ],
+      "parser_type": "regulatory",
+      "output_table": "regulatory_document",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*company*.txt", "*описани*.txt", "*предприят*.txt", "*шахт*.txt", "*mine*.txt"
+      ],
+      "parser_type": "company",
+      "output_table": "company_description",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*premises*.txt", "*выработк*.txt", "*помещени*.txt", "*face_passport*.txt",
+        "*premise*.txt", "*список выработок*.txt"
+      ],
+      "parser_type": "premise",
+      "output_table": "premise",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*employee*.txt", "*сотрудник*.txt", "*список*.txt", "*личный*.txt",
+        "*погибш*.txt", "*пострадавш*.txt", "*work_order*.txt", "*смена*.txt",
+        "*incident_victims*.txt", "*shift_log*.txt", "*employees_list*.txt"
+      ],
+      "parser_type": "employee",
+      "output_table": "employee",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*affected*.txt", "*поражен*.txt", "*explosion_model*.txt", "*blast*.txt",
+        "*моделировани*.txt", "*inspection_act*.txt", "*underground_inspection*.txt"
+      ],
+      "parser_type": "affected_areas",
+      "output_table": "affected_areas",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*inspection*.txt", "*осмотр*.txt", "*акт осмотра*.txt", "*insp_desc*.txt"
+      ],
+      "parser_type": "inspection",
+      "output_table": "inspection_description",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*incident_summary*.txt", "*описание*.txt", "*сводка*.txt", "*summary*.txt"
+      ],
+      "parser_type": "incident_description",
+      "output_table": "incident_description",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*transcript*.txt", "*аудио*.txt", "*звонок*.txt", "*audio*.txt", "*timeline*.txt"
+      ],
+      "parser_type": "chronology",
+      "output_table": "chronology_incident",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*witness*.txt", "*опрос*.txt", "*показан*.txt", "*протокол*.txt", "*interview*.txt"
+      ],
+      "parser_type": "witness",
+      "output_table": "witness_statement",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*seismic*.csv", "*сейсмическ*.txt", "*earthquake*.xml", "*seis_event*.csv"
+      ],
+      "parser_type": "seismic",
+      "output_table": "seismic_event",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*реестр*.xlsx", "*эксперт*.xlsx", "*expert*.xlsx", "*peectp*.xlsx"
+      ],
+      "parser_type": "expert",
+      "output_table": "expert_dictionary",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*communication*.txt", "*звонок*.txt", "*разговор*.txt", "*call*.txt"
+      ],
+      "parser_type": "communication",
+      "output_table": "communication_record",
+      "priority": 10
+    }
+  ]
+}

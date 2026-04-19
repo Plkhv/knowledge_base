@@ -306,6 +306,7 @@ services:
     volumes:
       - ./notebooks:/home/jovyan/work
       - ./spark-jars:/home/jovyan/jars
+      - ./mine_parser:/home/jovyan/mine_parser
     ports:
       - "8888:8888"
     networks:
@@ -326,9 +327,11 @@ services:
       - _AIRFLOW_WWW_USER_CREATE=True
       - _AIRFLOW_WWW_USER_USERNAME=admin
       - _AIRFLOW_WWW_USER_PASSWORD=admin
+      - _PIP_ADDITIONAL_REQUIREMENTS=minio trino pandas openpyxl mawo-natasha mawo-slovnet
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
+      - ./mine_parser:/opt/airflow/mine_parser
     ports:
       - "8080:8080"
     networks:
