@@ -182,6 +182,7 @@ services:
       - "8082:8080"
     volumes:
       - ./config/trino/catalog:/etc/trino/catalog
+      - ./config/trino/catalog:/etc/trino/catalog/config.properties
     networks:
       - lakehouse-net
     healthcheck:
