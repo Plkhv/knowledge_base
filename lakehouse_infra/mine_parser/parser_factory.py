@@ -60,7 +60,7 @@ class ParserFactory:
     
     def _load_incident_id(self) -> str:
         """Загружает ID инцидента из конфига"""
-        config_file = Path('/opt/airflow/mine_parser/config/incident_config.json')
+        config_file = self.config_path / 'incident_config.json'
         if config_file.exists():
             try:
                 with open(config_file, 'r', encoding='utf-8') as f:

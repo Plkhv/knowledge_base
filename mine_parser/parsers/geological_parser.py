@@ -17,8 +17,8 @@ class GeologicalParser(BaseParser):
     Поддерживает: структурные колонки, геологические разрезы, отчеты по газоносности.
     """
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, config_path: str = "./config", incident_id: str = None):
+        super().__init__(config_path, incident_id)
         self.set_table_name("geological_structure")
     
     def supports(self, file_name: str) -> bool:
@@ -108,8 +108,8 @@ class GeologicalParser(BaseParser):
                 'thickness_m': thickness,
                 'gas_content_m3_per_ton': gas_content,
                 'description': description,
-                'is_working_layer': 1 if layer_name == 'К3' else 0,
-                'is_satellite': 1 if layer_name == 'К2' else 0,
+                'is_working_layer': bool(1 if layer_name == 'К3' else 0),
+                'is_satellite': bool(1 if layer_name == 'К2' else 0),
                 '_source_file': file_name
             }
             

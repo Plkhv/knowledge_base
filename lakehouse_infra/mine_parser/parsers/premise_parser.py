@@ -20,8 +20,8 @@ class PremiseParser(BaseParser):
     # Константы
     COMPANY_ID = "COMP-00001"  # ID шахты им. Костенко
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, incident_id: Optional[str] = None, config_path: str = "./config"):
+        super().__init__(incident_id, config_path)
         self.set_table_name("premise")
         # Хранилище для объединения данных из разных файлов
         self.premises_cache = {}
@@ -53,16 +53,15 @@ class PremiseParser(BaseParser):
         else:
             records = self._parse_generic(content, file_name)
         
-        # Объединяем с кэшем
+        # Объединяем с кэшем (дедупликация по имени выработки между файлами)
         for record in records:
             premise_name = record.get('premise_name')
             if premise_name and premise_name in self.premises_cache:
-                old_record = self.premises_cache[premise_name]
-                old_record.update(record)
+                self.premises_cache[premise_name].update(record)
             elif premise_name:
                 self.premises_cache[premise_name] = record
-        
-        return records
+
+        return list(self.premises_cache.values())
     
     def _parse_premises_list(self, content: str, file_name: str) -> List[Dict[str, Any]]:
         """Парсит список выработок (таблица с | разделителем)"""
@@ -122,7 +121,7 @@ class PremiseParser(BaseParser):
                 'length_m': None,
                 'cross_section_m2': None,
                 'company_id': self.COMPANY_ID,
-                '_source_file': file_name
+                'source_file': file_name
             }
             
             # premise_id (используем код из таблицы или генерируем)
@@ -193,7 +192,7 @@ class PremiseParser(BaseParser):
                 'length_m': length,
                 'cross_section_m2': section,
                 'company_id': self.COMPANY_ID,
-                '_source_file': file_name
+                'source_file': file_name
             }
             records.append(record)
         
@@ -218,7 +217,7 @@ class PremiseParser(BaseParser):
                 'length_m': length,
                 'cross_section_m2': section,
                 'company_id': self.COMPANY_ID,
-                '_source_file': file_name
+                'source_file': file_name
             }
             records.append(record)
         
@@ -243,7 +242,7 @@ class PremiseParser(BaseParser):
                 'length_m': length,
                 'cross_section_m2': section,
                 'company_id': self.COMPANY_ID,
-                '_source_file': file_name
+                'source_file': file_name
             }
             records.append(record)
         
@@ -264,7 +263,7 @@ class PremiseParser(BaseParser):
                 'length_m': length,
                 'cross_section_m2': section,
                 'company_id': self.COMPANY_ID,
-                '_source_file': file_name
+                'source_file': file_name
             }
             records.append(record)
         
@@ -320,7 +319,7 @@ class PremiseParser(BaseParser):
                 'length_m': None,
                 'cross_section_m2': None,
                 'company_id': self.COMPANY_ID,
-                '_source_file': file_name
+                'source_file': file_name
             }
             
             if 'name' in indices and indices['name'] < len(parts):
@@ -374,7 +373,7 @@ class PremiseParser(BaseParser):
                         'length_m': None,
                         'cross_section_m2': None,
                         'company_id': self.COMPANY_ID,
-                        '_source_file': file_name
+                        'source_file': file_name
                     }
                     records.append(record)
         
@@ -383,7 +382,7 @@ class PremiseParser(BaseParser):
     def _normalize_premise_type(self, premise_type: str) -> str:
         """Нормализует тип выработки"""
         if not premise_type:
-            return 'None'
+            return None
         
         type_lower = premise_type.lower()
         

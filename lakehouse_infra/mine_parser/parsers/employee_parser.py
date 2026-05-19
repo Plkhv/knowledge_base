@@ -17,8 +17,8 @@ class EmployeeParser(BaseParser):
     Поддерживает: списки сотрудников, книги нарядов, списки пострадавших.
     """
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, incident_id: Optional[str] = None, config_path: str = "./config"):
+        super().__init__(incident_id, config_path)
         self.set_table_name("employee")
         self.employees_cache = {}
     
@@ -47,16 +47,15 @@ class EmployeeParser(BaseParser):
         else:
             records = self._parse_generic(content, file_name)
         
-        # Объединяем с кэшем
+        # Объединяем с кэшем (дедупликация по ФИО между файлами)
         for record in records:
             fio = self._get_fio_key(record)
             if fio and fio in self.employees_cache:
-                old_record = self.employees_cache[fio]
-                old_record.update(record)
+                self.employees_cache[fio].update(record)
             elif fio:
                 self.employees_cache[fio] = record
-        
-        return records
+
+        return list(self.employees_cache.values())
     
     def _parse_employee_list(self, content: str, file_name: str) -> List[Dict[str, Any]]:
         """Парсит список сотрудников (таблица с | разделителем)"""
@@ -126,7 +125,7 @@ class EmployeeParser(BaseParser):
                     'department': 'участок №6',
                     'status_at_incident': None,
                     'injury_type': None,
-                    '_source_file': file_name
+                    'source_file': file_name
                 }
                 records.append(record)
         
@@ -172,7 +171,7 @@ class EmployeeParser(BaseParser):
                         'department': 'участок №6',
                         'status_at_incident': current_status,
                         'injury_type': injury_raw,
-                        '_source_file': file_name
+                        'source_file': file_name
                     }
                     records.append(record)
                 
@@ -196,7 +195,7 @@ class EmployeeParser(BaseParser):
                         'department': 'участок №6',
                         'status_at_incident': current_status,
                         'injury_type': None,
-                        '_source_file': file_name
+                        'source_file': file_name
                     }
                     records.append(record)
         
@@ -228,7 +227,7 @@ class EmployeeParser(BaseParser):
                     'department': 'участок №6',
                     'status_at_incident': 'выжил',
                     'injury_type': None,
-                    '_source_file': file_name
+                    'source_file': file_name
                 }
                 records.append(record)
         
@@ -271,7 +270,7 @@ class EmployeeParser(BaseParser):
                         'department': 'участок №6',
                         'status_at_incident': status,
                         'injury_type': None,
-                        '_source_file': file_name
+                        'source_file': file_name
                     }
                     records.append(record)
         
@@ -296,7 +295,7 @@ class EmployeeParser(BaseParser):
                 'department': None,
                 'status_at_incident': None,
                 'injury_type': None,
-                '_source_file': file_name
+                'source_file': file_name
             }
             records.append(record)
         

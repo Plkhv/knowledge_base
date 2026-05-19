@@ -27,8 +27,8 @@ class SensorRecordParser(BaseParser):
         'SPEED': {'min': 0.5, 'max': 4.0},
     }
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, config_path: str = "./config", incident_id: str = None):
+        super().__init__(config_path, incident_id)
         self.set_table_name("sensor_record")
     
 # parsers/sensor_record_parser.py - добавьте в supports():
@@ -217,13 +217,13 @@ class SensorRecordParser(BaseParser):
         
         if sensor_type == 'CH4':
             threshold = self.THRESHOLDS['CH4']['alarm']
-            return 1 if value >= threshold else 0
+            return value >= threshold
         elif sensor_type == 'CO':
             threshold = self.THRESHOLDS['CO']['alarm']
-            return 1 if value >= threshold else 0
+            value >= threshold
         elif sensor_type == 'SPEED':
             min_val = self.THRESHOLDS['SPEED']['min']
             max_val = self.THRESHOLDS['SPEED']['max']
-            return 1 if value < min_val or value > max_val else 0
+            return value < min_val or value > max_val
         
-        return 0
+        return False

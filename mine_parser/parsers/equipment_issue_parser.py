@@ -38,8 +38,8 @@ class EquipmentIssueParser(BaseParser):
         'респиратор': 'СИЗ',
     }
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, config_path: str = "./config", incident_id: str = None):
+        super().__init__(config_path, incident_id)
         self.set_table_name("equipment_issue_log")
     
     def supports(self, file_name: str) -> bool:
@@ -164,7 +164,7 @@ class EquipmentIssueParser(BaseParser):
             notes = parts[indices['notes']] if 'notes' in indices and indices['notes'] < len(parts) else None
             
             # Определяем признак возврата
-            is_returned = 1 if return_date else 0
+            is_returned = bool(1 if return_date else 0)
             
             record = {
                 'issue_id': generate_issue_id(),
@@ -271,7 +271,7 @@ class EquipmentIssueParser(BaseParser):
                 'issue_date': issue_date,
                 'shift': self._normalize_shift(shift),
                 'return_date': None,
-                'is_returned': 0,
+                'is_returned': bool(0),
                 'issued_by': issued_by,
                 'purpose': 'СИЗ',
                 'notes': None,
@@ -332,7 +332,7 @@ class EquipmentIssueParser(BaseParser):
                                 'issue_date': issue_date,
                                 'shift': self._normalize_shift(shift),
                                 'return_date': None,
-                                'is_returned': 0,
+                                'is_returned': bool(0),
                                 'issued_by': issued_by,
                                 'purpose': 'демонтаж крепи',
                                 'notes': None,
@@ -369,7 +369,7 @@ class EquipmentIssueParser(BaseParser):
                     'issue_date': DateParser.parse_to_str(match[0]) if match[0] else None,
                     'shift': None,
                     'return_date': None,
-                    'is_returned': 0,
+                    'is_returned': bool(0),
                     'issued_by': None,
                     'purpose': None,
                     'notes': None,

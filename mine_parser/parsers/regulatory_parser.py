@@ -18,8 +18,8 @@ class RegulatoryParser(BaseParser):
                  правила безопасности, стандарты.
     """
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, config_path: str = "./config", incident_id: str = None):
+        super().__init__(config_path, incident_id)
         self.set_table_name("regulatory_document")
     
     def supports(self, file_name: str) -> bool:

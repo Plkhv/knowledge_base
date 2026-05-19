@@ -15,8 +15,6 @@ class ChronologyParser(BaseParser):
     Активно использует mawo-natasha для NER и извлечения сущностей.
     """
     
-    INCIDENT_ID = "INC-2023-001"
-    
     EVENT_KEYWORDS = {
         'сообщение о пожаре': ['горит', 'пожар', 'огонь', 'загорание', 'пламя'],
         'взрыв': ['взрыв', 'хлопок', 'ударная волна', 'бабах'],
@@ -30,8 +28,8 @@ class ChronologyParser(BaseParser):
         'тушение': ['тушим', 'огнетушитель', 'затушить', 'вода'],
     }
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, incident_id: Optional[str] = None, config_path: str = "./config"):
+        super().__init__(incident_id, config_path)
         self.set_table_name("chronology_incident")
         self._init_mawo()
     
@@ -45,6 +43,7 @@ class ChronologyParser(BaseParser):
             self.mawo_available = True
         except ImportError:
             self.mawo_available = False
+            self.ner_tagger = None
             print("Warning: mawo-natasha not installed")
     
     def supports(self, file_name: str) -> bool:
@@ -136,7 +135,7 @@ class ChronologyParser(BaseParser):
             if event_type:
                 event = {
                     'event_id': generate_event_id(),
-                    'incident_id': self.INCIDENT_ID,
+                    'incident_id': self.incident_id,
                     'event_dttm': block['timestamp'].strftime('%Y-%m-%d %H:%M:%S') if block['timestamp'] else None,
                     'event_type': event_type,
                     'action_description': self._extract_action_description(sentence),
@@ -147,7 +146,7 @@ class ChronologyParser(BaseParser):
                     'location': self._extract_location_mawo(sentence),
                     'persons': self._extract_persons_mawo(sentence),
                     'speaker': self._extract_speaker(sentence),
-                    '_source_file': file_name
+                    'source_file': file_name
                 }
                 events.append(event)
         
@@ -259,7 +258,7 @@ class ChronologyParser(BaseParser):
         """Создает событие взрыва на основе сейсмических данных"""
         return {
             'event_id': generate_event_id(),
-            'incident_id': self.INCIDENT_ID,
+            'incident_id': self.incident_id,
             'event_dttm': '2023-10-28 02:43:49',
             'event_type': 'взрыв',
             'action_description': 'Сейсмическое событие (первичный взрыв метано-воздушной смеси)',
@@ -270,5 +269,5 @@ class ChronologyParser(BaseParser):
             'location': 'лава 48 К3-з',
             'persons': None,
             'speaker': None,
-            '_source_file': 'seismic_data'
+            'source_file': 'seismic_data'
         }

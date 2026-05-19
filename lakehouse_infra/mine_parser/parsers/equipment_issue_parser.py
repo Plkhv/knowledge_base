@@ -18,8 +18,6 @@ class EquipmentIssueParser(BaseParser):
     """
     
     # ID инцидента (будет установлен post-hoc)
-    INCIDENT_ID = "INC-2023-001"
-    
     # Справочник типов оборудования
     EQUIPMENT_TYPES = {
         'шлифовальн': 'инструмент',
@@ -38,8 +36,8 @@ class EquipmentIssueParser(BaseParser):
         'респиратор': 'СИЗ',
     }
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, incident_id: Optional[str] = None, config_path: str = "./config"):
+        super().__init__(incident_id, config_path)
         self.set_table_name("equipment_issue_log")
     
     def supports(self, file_name: str) -> bool:
@@ -69,7 +67,7 @@ class EquipmentIssueParser(BaseParser):
         
         # Добавляем incident_id
         for record in records:
-            record['incident_id'] = self.INCIDENT_ID
+            record['incident_id'] = self.incident_id
         
         return records
     
@@ -164,11 +162,11 @@ class EquipmentIssueParser(BaseParser):
             notes = parts[indices['notes']] if 'notes' in indices and indices['notes'] < len(parts) else None
             
             # Определяем признак возврата
-            is_returned = 1 if return_date else 0
+            is_returned = bool(1 if return_date else 0)
             
             record = {
                 'issue_id': generate_issue_id(),
-                'incident_id': self.INCIDENT_ID,
+                'incident_id': self.incident_id,
                 'equipment_name': equipment_name,
                 'equipment_type': equipment_type,
                 'inventory_number': inventory_number,
@@ -184,7 +182,7 @@ class EquipmentIssueParser(BaseParser):
                 'issued_by': issued_by,
                 'purpose': purpose,
                 'notes': notes,
-                '_source_file': file_name
+                'source_file': file_name
             }
             
             records.append(record)
@@ -259,7 +257,7 @@ class EquipmentIssueParser(BaseParser):
             
             record = {
                 'issue_id': generate_issue_id(),
-                'incident_id': self.INCIDENT_ID,
+                'incident_id': self.incident_id,
                 'equipment_name': equipment_name,
                 'equipment_type': equipment_type,
                 'inventory_number': None,
@@ -271,11 +269,11 @@ class EquipmentIssueParser(BaseParser):
                 'issue_date': issue_date,
                 'shift': self._normalize_shift(shift),
                 'return_date': None,
-                'is_returned': 0,
+                'is_returned': False,
                 'issued_by': issued_by,
                 'purpose': 'СИЗ',
                 'notes': None,
-                '_source_file': file_name
+                'source_file': file_name
             }
             
             records.append(record)
@@ -320,7 +318,7 @@ class EquipmentIssueParser(BaseParser):
                             
                             record = {
                                 'issue_id': generate_issue_id(),
-                                'incident_id': self.INCIDENT_ID,
+                                'incident_id': self.incident_id,
                                 'equipment_name': equipment_name,
                                 'equipment_type': equipment_type,
                                 'inventory_number': inventory_number,
@@ -332,11 +330,11 @@ class EquipmentIssueParser(BaseParser):
                                 'issue_date': issue_date,
                                 'shift': self._normalize_shift(shift),
                                 'return_date': None,
-                                'is_returned': 0,
+                                'is_returned': False,
                                 'issued_by': issued_by,
                                 'purpose': 'демонтаж крепи',
                                 'notes': None,
-                                '_source_file': file_name
+                                'source_file': file_name
                             }
                             records.append(record)
         
@@ -357,7 +355,7 @@ class EquipmentIssueParser(BaseParser):
             for match in matches:
                 record = {
                     'issue_id': generate_issue_id(),
-                    'incident_id': self.INCIDENT_ID,
+                    'incident_id': self.incident_id,
                     'equipment_name': match[2] if len(match) > 2 else None,
                     'equipment_type': None,
                     'inventory_number': None,
@@ -369,11 +367,11 @@ class EquipmentIssueParser(BaseParser):
                     'issue_date': DateParser.parse_to_str(match[0]) if match[0] else None,
                     'shift': None,
                     'return_date': None,
-                    'is_returned': 0,
+                    'is_returned': False,
                     'issued_by': None,
                     'purpose': None,
                     'notes': None,
-                    '_source_file': file_name
+                    'source_file': file_name
                 }
                 if record['equipment_name']:
                     record['equipment_type'] = self._determine_equipment_type(record['equipment_name'])

@@ -17,8 +17,8 @@ class IncidentDescriptionParser(BaseParser):
     Использует mawo-natasha для извлечения локаций и сущностей.
     """
     
-    def __init__(self, config_path: str = "./config", incident_id: str = 'None'):
-        super().__init__(config_path, incident_id)
+    def __init__(self, incident_id: Optional[str] = None, config_path: str = "./config"):
+        super().__init__(incident_id, config_path)
         self.set_table_name("incident_description")
         self._init_mawo()
     
@@ -32,6 +32,7 @@ class IncidentDescriptionParser(BaseParser):
             self.mawo_available = True
         except ImportError:
             self.mawo_available = False
+            self.ner_tagger = None
             print("Warning: mawo-natasha not installed")
     
     def supports(self, file_name: str) -> bool:
@@ -59,7 +60,7 @@ class IncidentDescriptionParser(BaseParser):
             'brief_description': self._extract_description(content),
             'extracted_locations': self._extract_locations_mawo(content),
             'extracted_entities': self._extract_entities_mawo(content),
-            '_source_file': file_name
+            'source_file': file_name
         }
         
         # Очищаем строковые поля

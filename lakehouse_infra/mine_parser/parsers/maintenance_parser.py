@@ -17,11 +17,15 @@ class MaintenanceParser(BaseParser):
     Поддерживает: комбайны, конвейеры, крепь.
     """
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, incident_id: Optional[str] = None, config_path: str = "./config"):
+        super().__init__(incident_id, config_path)
         self.set_table_name("equipment_maintenance")
-        # Словарь для сопоставления оборудования (будет заполняться post-hoc)
-        self.equipment_mapping = {}
+        # Маппинг моделей → equipment_id; может быть обновлён через set_equipment_mapping()
+        self.equipment_mapping = {
+            'FS300/1.0':       'EQ-FS300-001',
+            'FFC-8':           'EQ-FFC8-001',
+            'Glinik 10/25-2':  'EQ-GLIN-001',
+        }
     
     def supports(self, file_name: str) -> bool:
         """Проверяет, подходит ли файл для парсинга журналов ТО"""
@@ -177,13 +181,13 @@ class MaintenanceParser(BaseParser):
         if completed_idx and completed_idx < len(parts):
             val = parts[completed_idx].lower()
             if val in ['да', '+', 'yes', 'выполнено', '1']:
-                is_completed = 1
+                is_completed = True
             elif val in ['нет', '-', 'no', 'не выполнено', '0']:
-                is_completed = 0
+                is_completed = False
         
         # Если нет информации о выполнении, считаем что выполнено (по умолчанию)
         if is_completed is None:
-            is_completed = 1
+            is_completed = True
         
         # Определяем equipment_id по модели
         equipment_id = None
@@ -199,8 +203,7 @@ class MaintenanceParser(BaseParser):
             'performed_by': performed_by,
             'anomaly_notes': anomaly_notes,
             'is_completed': is_completed,
-            '_source_file': file_name,
-            '_equipment_model': equipment_model  # временное поле для отладки
+            'source_file': file_name,
         }
         
         # Очищаем строковые поля

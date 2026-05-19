@@ -17,8 +17,8 @@ class CompanyParser(BaseParser):
     Поддерживает: описание предприятия, паспорта шахт, планы развития.
     """
     
-    def __init__(self, config_path: str = "./config", incident_id: str = 'None'):
-        super().__init__(config_path)
+    def __init__(self, config_path: str = "./config", incident_id: str = None):
+        super().__init__(config_path, incident_id)
         self.set_table_name("company_description")
         self.incident_id = incident_id
         self._company_id = None

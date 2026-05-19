@@ -17,8 +17,8 @@ class SensorReestrParser(BaseParser):
     Поддерживает: проекты АСКА, журналы поверки, отчеты о работе.
     """
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, config_path: str = "./config", incident_id: str = None):
+        super().__init__(config_path, incident_id)
         self.set_table_name("sensor_reestr")
         # Хранилище для объединения данных из разных файлов
         self.sensors_cache = {}

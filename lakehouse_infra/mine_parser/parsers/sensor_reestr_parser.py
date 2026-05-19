@@ -17,8 +17,8 @@ class SensorReestrParser(BaseParser):
     Поддерживает: проекты АСКА, журналы поверки, отчеты о работе.
     """
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, incident_id: Optional[str] = None, config_path: str = "./config"):
+        super().__init__(incident_id, config_path)
         self.set_table_name("sensor_reestr")
         # Хранилище для объединения данных из разных файлов
         self.sensors_cache = {}
@@ -49,16 +49,15 @@ class SensorReestrParser(BaseParser):
         else:
             records = self._parse_generic(content, file_name)
         
-        # Объединяем с кэшем (если данные из разных файлов)
+        # Объединяем с кэшем (дедупликация по sensor_id между файлами)
         for record in records:
             sensor_id = record.get('sensor_id')
             if sensor_id and sensor_id in self.sensors_cache:
-                # Обновляем существующую запись
                 self.sensors_cache[sensor_id].update(record)
             elif sensor_id:
                 self.sensors_cache[sensor_id] = record
-        
-        return records
+
+        return list(self.sensors_cache.values())
     
     # parsers/sensor_reestr_parser.py - добавьте этот метод
 
@@ -90,7 +89,7 @@ class SensorReestrParser(BaseParser):
                     'last_calibration_date': None,
                     'battery_life_hours': None,
                     'actual_battery_time_at_incident': None,
-                    '_source_file': file_name
+                    'source_file': file_name
                 }
                 records.append(record)
         
@@ -182,7 +181,7 @@ class SensorReestrParser(BaseParser):
             if 'battery' in indices and indices['battery'] < len(parts):
                 record['battery_life_hours'] = self._to_int(parts[indices['battery']])
             
-            record['_source_file'] = file_name
+            record['source_file'] = file_name
             
             if record.get('sensor_id'):
                 records.append(record)
@@ -246,7 +245,7 @@ class SensorReestrParser(BaseParser):
                     parts[indices['battery_actual']]
                 )
             
-            record['_source_file'] = file_name
+            record['source_file'] = file_name
             
             if record.get('sensor_id'):
                 records.append(record)
@@ -279,7 +278,7 @@ class SensorReestrParser(BaseParser):
                 'last_calibration_date': None,
                 'battery_life_hours': None,
                 'actual_battery_time_at_incident': None,
-                '_source_file': file_name
+                'source_file': file_name
             }
             
             if record['unit'] is None and record['sensor_type']:

@@ -25,8 +25,8 @@ class AirAnalysisParser(BaseParser):
     O2_ATM = 20.9
     CO_ATM = 0.0
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, config_path: str = "./config", incident_id: str = None):
+        super().__init__(config_path, incident_id)
         self.set_table_name("air_analysis")
     
     def supports(self, file_name: str) -> bool:

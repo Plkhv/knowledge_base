@@ -49,7 +49,7 @@ class DateParser:
         
         # Попытка парсинга через dateutil
         try:
-            return parser.parse(text, default=datetime(2000, 1, 1) if default_year is None else None)
+            return parser.parse(text, dayfirst=True, default=datetime(2000, 1, 1) if default_year is None else None)
         except ParserError:
             pass
         

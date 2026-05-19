@@ -20,8 +20,9 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.affected_areas (
     premise_id VARCHAR,
     damage_type VARCHAR,
     damage_description VARCHAR,
-    is_primary_blast_zone INTEGER,
-    geo_metca VARCHAR,
+    is_primary_blast_zone BOOLEAN,  
+    length_m DOUBLE,              
+    geo_meta VARCHAR,               
     source_file VARCHAR
 ) WITH (format = 'PARQUET', partitioning = ARRAY['incident_id']);
 
@@ -38,12 +39,16 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.air_analysis (
     h2_percent DOUBLE,
     analyst VARCHAR,
     analyst_laboratory VARCHAR,
-    r1_co2_o2_ratio DOUBLE,
+    r1_o2_co2_ratio DOUBLE,       -- R1 = ΔO₂/ΔCO₂ 
     r2_co_o2_ratio DOUBLE,
     r3_co_co2_ratio DOUBLE,
+    delta_o2 DOUBLE,                  -- ΔO₂  = O2_ATM − o2_percent
+    delta_co2 DOUBLE,                 -- ΔCO₂ = co2_percent − CO2_ATM
+    delta_co DOUBLE,                  -- ΔCO  = co_percent − CO_ATM
+    is_oxidation BOOLEAN,             -- R1 < 2.5
     conclusion VARCHAR,
-    source_file VARCHAR,
-    _notice_num VARCHAR
+    source_file VARCHAR
+    -- _notice_num убран: внутреннее поле парсера, не должно быть в схеме
 ) WITH (format = 'PARQUET', partitioning = ARRAY['incident_id']);
 
 -- chronology_incident - хронология
@@ -120,7 +125,9 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.equipment_certificate (
     issuing_body VARCHAR,
     issue_date VARCHAR,
     expiry_date VARCHAR,
-    is_valid_at_incident INTEGER,
+    is_valid_at_incident BOOLEAN,  -- исправлено INTEGER → BOOLEAN
+    product_name VARCHAR,          -- добавлено: извлекается парсером для equipment_mapping
+    serial_number VARCHAR,         -- добавлено: извлекается парсером для equipment_mapping
     source_file VARCHAR
 ) WITH (format = 'PARQUET');
 
@@ -139,7 +146,7 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.equipment_issue_log (
     issue_date VARCHAR,
     shift VARCHAR,
     return_date VARCHAR,
-    is_returned INTEGER,
+    is_returned BOOLEAN,  
     issued_by VARCHAR,
     purpose VARCHAR,
     notes VARCHAR,
@@ -155,9 +162,9 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.equipment_maintenance (
     operation_type VARCHAR,
     performed_by VARCHAR,
     anomaly_notes VARCHAR,
-    is_completed INTEGER,
-    source_file VARCHAR,
-    _equipment_model VARCHAR
+    is_completed BOOLEAN,  -- исправлено INTEGER → BOOLEAN
+    source_file VARCHAR
+    -- _equipment_model убран: внутреннее поле парсера
 ) WITH (format = 'PARQUET');
 
 -- expert_dictionary - словарь экспертов
@@ -181,7 +188,7 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.gas_analysis (
     ch4_percent DOUBLE,
     air_velocity_mps DOUBLE,
     measurement_height_cm DOUBLE,
-    is_anomaly INTEGER,
+    is_anomaly BOOLEAN,  -- исправлено INTEGER → BOOLEAN
     note VARCHAR,
     source_file VARCHAR
 ) WITH (format = 'PARQUET', partitioning = ARRAY['incident_id']);
@@ -198,8 +205,8 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.geological_structure (
     thickness_m DOUBLE,
     gas_content_m3_per_ton DOUBLE,
     description VARCHAR,
-    is_working_layer INTEGER,
-    is_satellite INTEGER,
+    is_working_layer BOOLEAN,  -- исправлено INTEGER → BOOLEAN
+    is_satellite BOOLEAN,      -- исправлено INTEGER → BOOLEAN
     source_file VARCHAR
 ) WITH (format = 'PARQUET');
 
@@ -208,7 +215,7 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.hypotesis_prove_facts (
     fact_id VARCHAR,
     hypotesis_id VARCHAR,
     source_name VARCHAR,
-    is_prove INTEGER,
+    is_prove BOOLEAN,  -- исправлено INTEGER → BOOLEAN
     fact_text VARCHAR,
     match_type VARCHAR,
     keyword VARCHAR,
@@ -269,10 +276,10 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.premise_parameters (
     inert_dust_applied_kg DOUBLE,
     noncombustible_content_percent DOUBLE,
     normative_noncombustible_percent DOUBLE,
-    is_compliant INTEGER,
+    is_compliant BOOLEAN,   -- исправлено INTEGER → BOOLEAN
     dust_removal_water_m3 DOUBLE,
     dust_removal_frequency VARCHAR,
-    water_spray_present INTEGER,
+    water_spray_present BOOLEAN,  -- исправлено INTEGER → BOOLEAN
     water_spray_flow_l_min DOUBLE,
     air_flow_m3_min DOUBLE,
     air_velocity_mps DOUBLE,
@@ -322,8 +329,8 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.sensor_record (
     record_dttm VARCHAR,
     value DOUBLE,
     unit VARCHAR,
-    is_critical INTEGER,
-    data_quality_flag INTEGER,
+    is_critical BOOLEAN,    -- исправлено INTEGER → BOOLEAN
+    data_quality_flag INTEGER,  -- код качества (0=ok,1=warn,2=err) — оставляем INTEGER
     x_coordinate DOUBLE,
     y_coordinate DOUBLE,
     source_file VARCHAR
@@ -373,7 +380,7 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.expert_conclusion (
     scenario_description VARCHAR,
     root_cause VARCHAR,
     contributing_factors VARCHAR,
-    is_confirmed INTEGER,
+    is_confirmed BOOLEAN,  -- исправлено INTEGER → BOOLEAN
     report_id VARCHAR,
     confirmed_hypotesis_id VARCHAR,
     source_file VARCHAR
@@ -386,8 +393,8 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.hypotesis (
     hypothesis_type VARCHAR,
     description VARCHAR,
     confidence_score DOUBLE,
-    is_confirmed INTEGER,
-    actual_flag INTEGER,
+    is_confirmed BOOLEAN,  -- исправлено INTEGER → BOOLEAN
+    actual_flag BOOLEAN,   -- исправлено INTEGER → BOOLEAN
     source_file VARCHAR
 ) WITH (format = 'PARQUET', partitioning = ARRAY['incident_id']);
 
@@ -407,11 +414,14 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.recommended_actions (
 CREATE TABLE IF NOT EXISTS iceberg.mine.fire_metrics (
     metric_id VARCHAR,
     incident_id VARCHAR,
-    r1_co2_o2_ratio DOUBLE,
+    r1_o2_co2_ratio DOUBLE,       -- R1 = ΔO₂/ΔCO₂ (исправлено: было r1_co2_o2_ratio)
     r2_co_o2_ratio DOUBLE,
     r3_co_co2_ratio DOUBLE,
+    delta_o2 DOUBLE,
+    delta_co2 DOUBLE,
+    delta_co DOUBLE,
     critical_r1_threshold DOUBLE,
-    is_oxidation_detected INTEGER,
+    is_oxidation_detected BOOLEAN, -- исправлено INTEGER → BOOLEAN
     fire_duration_minutes INTEGER,
     fire_spread_speed_mps DOUBLE,
     max_co_ppm DOUBLE,
@@ -423,12 +433,17 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.fire_metrics (
 CREATE TABLE IF NOT EXISTS iceberg.mine.ventilation_metrics (
     metric_id VARCHAR,
     incident_id VARCHAR,
+    air_velocity_fact_mps DOUBLE,       -- ν_fact (факт)
     air_velocity_min_mps DOUBLE,
-    air_velocity_norm_mps DOUBLE,
-    velocity_deficit_percent DOUBLE,
-    leakage_coefficient DOUBLE,
-    distribution_coefficient DOUBLE,
-    is_ventilation_valid INTEGER,
+    air_velocity_norm_mps DOUBLE,       -- ν_norm (норматив)
+    velocity_deficit_percent DOUBLE,    -- δ_v = max(0,(ν_norm−ν_fact)/ν_norm×100%)
+    airflow_in_m3min DOUBLE,            -- Q_in
+    airflow_out_m3min DOUBLE,           -- Q_out
+    airflow_total_m3min DOUBLE,         -- Q_total
+    airflow_lava_m3min DOUBLE,          -- Q_lava
+    leakage_coefficient DOUBLE,         -- k_leak = (Q_out−Q_in)/Q_in
+    distribution_coefficient DOUBLE,    -- K_distr = Q_lava/Q_total
+    is_ventilation_valid BOOLEAN,       -- исправлено INTEGER → BOOLEAN
     calculation_date TIMESTAMP,
     source_file VARCHAR
 ) WITH (format = 'PARQUET', partitioning = ARRAY['incident_id']);
@@ -437,15 +452,72 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.ventilation_metrics (
 CREATE TABLE IF NOT EXISTS iceberg.mine.incident_metrics (
     metric_id VARCHAR,
     incident_id VARCHAR,
+    total_victims INTEGER,             -- fatalities + injuries (формула 17 ВКР)
     fatalities_count INTEGER,
     injuries_count INTEGER,
     blast_pressure_mpa DOUBLE,
     blast_wave_speed_mps DOUBLE,
-    affected_area_length_m DOUBLE,
+    affected_area_length_m DOUBLE,     -- Σ length(a) (формула 18 ВКР)
+    affected_areas_count INTEGER,
     destroyed_structures_count INTEGER,
     economic_damage DOUBLE,
-    is_seismic_event INTEGER,
+    is_seismic_event BOOLEAN,          -- исправлено INTEGER → BOOLEAN
     calculation_date TIMESTAMP,
+    source_file VARCHAR
+) WITH (format = 'PARQUET', partitioning = ARRAY['incident_id']);
+
+-- incident_metrics_summary — сводная таблица S(uᵢ) (заполняется Spark)
+CREATE TABLE IF NOT EXISTS iceberg.mine.incident_metrics_summary (
+    incident_id VARCHAR,
+    -- M_inc
+    total_victims INTEGER,
+    fatalities INTEGER,
+    injuries INTEGER,
+    affected_area_length_m DOUBLE,
+    affected_areas_count INTEGER,
+    blast_pressure_mpa DOUBLE,
+    blast_wave_speed_mps DOUBLE,
+    is_seismic_event BOOLEAN,
+    -- M_vent (агрегаты по инциденту)
+    avg_delta_v_pct DOUBLE,
+    avg_k_leak DOUBLE,
+    avg_k_distr DOUBLE,
+    ventilation_compliant BOOLEAN,
+    -- M_fire (агрегаты по инциденту)
+    min_r1 DOUBLE,
+    max_r2 DOUBLE,
+    oxidation_detected BOOLEAN,
+    oxidation_sample_count BIGINT,
+    calculated_at TIMESTAMP
+) WITH (format = 'PARQUET');
+
+-- degassing_metrics — показатели дегазации (заполняются Spark)
+CREATE TABLE IF NOT EXISTS iceberg.mine.degassing_metrics (
+    incident_id VARCHAR,
+    premise_id VARCHAR,
+    measurement_dttm VARCHAR,
+    airflow_mix_m3min DOUBLE,
+    ch4_percent DOUBLE,
+    negative_pressure_mm DOUBLE,
+    q_gas_ch4_m3min DOUBLE,         -- Q_газ_CH₄ = расход × CH4/100
+    ch4_total_m3min DOUBLE,         -- Q_общ_CH₄
+    eta_deg_pct DOUBLE,             -- η_deg = Q_газ_CH₄/Q_общ_CH₄ × 100%
+    calculated_at TIMESTAMP,
+    source_file VARCHAR
+) WITH (format = 'PARQUET', partitioning = ARRAY['incident_id']);
+
+-- dust_metrics — показатели пылевзрывозащиты (заполняются Spark)
+CREATE TABLE IF NOT EXISTS iceberg.mine.dust_metrics (
+    incident_id VARCHAR,
+    premise_id VARCHAR,
+    measurement_dttm VARCHAR,
+    dust_type VARCHAR,
+    c_noncomb_pct DOUBLE,           -- содержание негорючих, %
+    c_norm_pct DOUBLE,              -- норматив = 85%
+    is_compliant_dust BOOLEAN,      -- C_noncomb ≥ 85%
+    cross_section_m2 DOUBLE,
+    length_m DOUBLE,
+    calculated_at TIMESTAMP,
     source_file VARCHAR
 ) WITH (format = 'PARQUET', partitioning = ARRAY['incident_id']);
 
@@ -454,13 +526,3 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.incident_metrics (
 -- ============================================
 
 SHOW TABLES FROM iceberg.mine;
-
--- ============================================
--- 6. Вывод статистики (опционально)
--- ============================================
-SELECT 
-    table_name,
-    comment
-FROM information_schema.tables 
-WHERE table_schema = 'mine'
-ORDER BY table_name;

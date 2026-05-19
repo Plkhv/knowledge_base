@@ -17,8 +17,8 @@ class CompanyParser(BaseParser):
     Поддерживает: описание предприятия, паспорта шахт, планы развития.
     """
     
-    def __init__(self, config_path: str = "./config", incident_id: str = 'None'):
-        super().__init__(config_path)
+    def __init__(self, incident_id: Optional[str] = None, config_path: str = "./config"):
+        super().__init__(incident_id, config_path)
         self.set_table_name("company_description")
         self.incident_id = incident_id
         self._company_id = None
@@ -38,6 +38,7 @@ class CompanyParser(BaseParser):
         Парсит файл с описанием предприятия.
         Возвращает одну запись (объединяет данные из разных файлов).
         """
+        self._company_id = None
         file_lower = file_name.lower()
         
         if 'описани' in file_lower or 'company' in file_lower:
@@ -71,7 +72,7 @@ class CompanyParser(BaseParser):
             'employees_count': None,
             'gas_hazard_category': None,
             'outburst_hazard': None,
-            '_source_file': file_name
+            'source_file': file_name
         }
         
         lines = content.split('\n')
@@ -148,7 +149,7 @@ class CompanyParser(BaseParser):
             'workings_length_km': None,         # ← новое поле
             'production_faces_count': None,     # ← новое поле
             'development_faces_count': None,    # ← новое поле
-            '_source_file': file_name
+            'source_file': file_name
         }
         
         # Полное наименование предприятия
@@ -169,14 +170,14 @@ class CompanyParser(BaseParser):
         # Проектная мощность
         match = re.search(r'Проектная мощность:\s*([\d\.]+)\s*(?:млн\s*тонн|млн\s*т|т/год)', content)
         if match:
-            value = match.group(1)
-            record['annual_production_tons'] = self._to_float(value) * 1000000 if value is not None and '.' in value else self._to_float(value)
+            _val = self._to_float(match.group(1))
+            record['annual_production_tons'] = _val * 1_000_000 if _val is not None else None
         
         # Фактическая добыча
         match = re.search(r'Фактическая добыча за\s+\d{4}\s*год:\s*([\d\.]+)\s*(?:млн\s*тонн|млн\s*т|т/год)', content)
         if match:
-            value = match.group(1)
-            record['actual_production_tons'] = self._to_float(value) * 1000000 if '.' in value else self._to_float(value)
+            _val2 = self._to_float(match.group(1))
+            record['actual_production_tons'] = _val2 * 1_000_000 if _val2 is not None else None
         
         # Глубина разработки
         match = re.search(r'Глубина разработки:\s*(\d+)-(\d+)\s*м', content)
@@ -260,7 +261,7 @@ class CompanyParser(BaseParser):
             'avg_daily_load_lava_48': None,      # ← новое поле
             'avg_daily_load_lava_42': None,      # ← новое поле
             'production_9months': None,           # ← новое поле
-            '_source_file': file_name
+            'source_file': file_name
         }
         
         # Ищем в таблице
@@ -302,7 +303,7 @@ class CompanyParser(BaseParser):
         match = re.search(r'Фактическая добыча за 9 месяцев 2023:\s*([\d\s]+)\s*т', content)
         if match:
             value = match.group(1).replace(' ', '')
-            record['production_9months'] = self._to_int(value)
+            record['production_9months'] = str(self._to_int(value)) if self._to_int(value) is not None else None
         
         # Название шахты
         match = re.search(r'Шахта:\s*([^\n]+)', content)
@@ -324,7 +325,7 @@ class CompanyParser(BaseParser):
             'employees_count': None,
             'gas_hazard_category': None,
             'outburst_hazard': None,
-            '_source_file': file_name
+            'source_file': file_name
         }
         
         # Название шахты
@@ -356,7 +357,8 @@ class CompanyParser(BaseParser):
         # Форматы: "2.5 млн тонн/год", "2500000 т/год", "1.82 млн тонн"
         match = re.search(r'([\d\.]+)\s*(?:млн|миллионов?)\s*(?:тонн|т)', value, re.IGNORECASE)
         if match:
-            return self._to_float(match.group(1)) * 1000000
+            _v = self._to_float(match.group(1))
+            return _v * 1_000_000 if _v is not None else None
         
         match = re.search(r'([\d\.]+)\s*т/год', value)
         if match:
@@ -378,10 +380,10 @@ class CompanyParser(BaseParser):
             min_depth = self._to_int(match.group(1))
             max_depth = self._to_int(match.group(2))
             if min_depth and max_depth:
-                return (min_depth + max_depth) // 2
+                return float((min_depth + max_depth) // 2)
         
         match = re.search(r'(\d+)\s*м', value)
         if match:
-            return self._to_int(match.group(1))
+            return float(self._to_int(match.group(1)))
         
         return None

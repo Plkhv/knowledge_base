@@ -17,8 +17,8 @@ class GeologicalParser(BaseParser):
     Поддерживает: структурные колонки, геологические разрезы, отчеты по газоносности.
     """
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, incident_id: Optional[str] = None, config_path: str = "./config"):
+        super().__init__(incident_id, config_path)
         self.set_table_name("geological_structure")
     
     def supports(self, file_name: str) -> bool:
@@ -108,9 +108,9 @@ class GeologicalParser(BaseParser):
                 'thickness_m': thickness,
                 'gas_content_m3_per_ton': gas_content,
                 'description': description,
-                'is_working_layer': 1 if layer_name == 'К3' else 0,
-                'is_satellite': 1 if layer_name == 'К2' else 0,
-                '_source_file': file_name
+                'is_working_layer': (layer_name == 'К3'),
+                'is_satellite': (layer_name == 'К2'),
+                'source_file': file_name
             }
             
             # Обновляем текущую глубину
@@ -119,6 +119,7 @@ class GeologicalParser(BaseParser):
             
             records.append(record)
         
+        records.sort(key=lambda r: r.get('depth_from_m') or 0)
         return records
     
     def _parse_geological_section(self, content: str, file_name: str) -> List[Dict[str, Any]]:
@@ -185,16 +186,16 @@ class GeologicalParser(BaseParser):
             
             # Определяем название пласта
             layer_name = None
-            is_working = 0
-            is_satellite = 0
+            is_working = False
+            is_satellite = False
             
             if 'уголь' in rock_type_raw.lower():
                 if 'К3' in content or 'К3' in rock_type_raw:
                     layer_name = 'К3'
-                    is_working = 1
+                    is_working = True
                 elif 'К2' in content or 'К2' in rock_type_raw:
                     layer_name = 'К2'
-                    is_satellite = 1
+                    is_satellite = True
             
             record = {
                 'structure_id': generate_geology_id(),
@@ -209,7 +210,7 @@ class GeologicalParser(BaseParser):
                 'description': description,
                 'is_working_layer': is_working,
                 'is_satellite': is_satellite,
-                '_source_file': file_name
+                'source_file': file_name
             }
             
             records.append(record)
@@ -240,9 +241,9 @@ class GeologicalParser(BaseParser):
             'thickness_m': None,
             'gas_content_m3_per_ton': avg_gas,
             'description': self._extract_conclusion(content),
-            'is_working_layer': 1,
-            'is_satellite': 0,
-            '_source_file': file_name
+            'is_working_layer': True,
+            'is_satellite': False,
+            'source_file': file_name
         }
         
         records.append(record)
@@ -261,9 +262,9 @@ class GeologicalParser(BaseParser):
                 'thickness_m': None,
                 'gas_content_m3_per_ton': self._to_float(k2_match.group(1)),
                 'description': None,
-                'is_working_layer': 0,
-                'is_satellite': 1,
-                '_source_file': file_name
+                'is_working_layer': False,
+                'is_satellite': True,
+                'source_file': file_name
             }
             records.append(record_k2)
         
@@ -306,9 +307,9 @@ class GeologicalParser(BaseParser):
                 'thickness_m': thickness,
                 'gas_content_m3_per_ton': gas_content,
                 'description': None,
-                'is_working_layer': 1 if layer == 'К3' else 0,
-                'is_satellite': 1 if layer == 'К2' else 0,
-                '_source_file': file_name
+                'is_working_layer': (layer == 'К3'),
+                'is_satellite': (layer == 'К2'),
+                'source_file': file_name
             }
             
             records.append(record)

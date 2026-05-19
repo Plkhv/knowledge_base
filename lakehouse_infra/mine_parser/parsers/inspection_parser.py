@@ -18,10 +18,9 @@ class InspectionParser(BaseParser):
     Поддерживает: акты осмотра, дневники осмотра.
     """
     
-    def __init__(self, config_path: str = "./config", incident_id: str = 'None'):
-        super().__init__(config_path)
+    def __init__(self, incident_id: Optional[str] = None, config_path: str = "./config"):
+        super().__init__(incident_id, config_path)
         self.set_table_name("inspection_description")
-        self.incident_id = incident_id  # ← теперь передается извне
     
     def supports(self, file_name: str) -> bool:
         """Проверяет, подходит ли файл для парсинга осмотров"""
@@ -107,7 +106,7 @@ class InspectionParser(BaseParser):
                         'condition_description': self._extract_condition_description(fact),
                         'violations_found': violations,
                         'equipment_name': equipment,
-                        '_source_file': file_name
+                        'source_file': file_name
                     }
                     records.append(record)
         
@@ -124,7 +123,7 @@ class InspectionParser(BaseParser):
                 'condition_description': None,
                 'violations_found': None,
                 'equipment_name': None,
-                '_source_file': file_name
+                'source_file': file_name
             }
             records.append(record)
         
@@ -183,7 +182,7 @@ class InspectionParser(BaseParser):
                         'condition_description': self._extract_condition_description(fact),
                         'violations_found': violations,
                         'equipment_name': equipment,
-                        '_source_file': file_name
+                        'source_file': file_name
                     }
                     records.append(record)
             
@@ -200,7 +199,7 @@ class InspectionParser(BaseParser):
                     'condition_description': None,
                     'violations_found': None,
                     'equipment_name': None,
-                    '_source_file': file_name
+                    'source_file': file_name
                 }
                 records.append(record)
         
@@ -217,7 +216,7 @@ class InspectionParser(BaseParser):
                 'condition_description': None,
                 'violations_found': None,
                 'equipment_name': None,
-                '_source_file': file_name
+                'source_file': file_name
             }
             records.append(record)
         
@@ -256,7 +255,7 @@ class InspectionParser(BaseParser):
                 'condition_description': self._extract_condition_description(fact),
                 'violations_found': violations,
                 'equipment_name': equipment,
-                '_source_file': file_name
+                'source_file': file_name
             }
             records.append(record)
         

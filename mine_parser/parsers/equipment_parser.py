@@ -16,8 +16,8 @@ class EquipmentParser(BaseParser):
     Поддерживает: комбайны, конвейеры, крепь.
     """
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, config_path: str = "./config", incident_id: str = None):
+        super().__init__(config_path, incident_id)
         self.set_table_name("equipment")
     
     def supports(self, file_name: str) -> bool:

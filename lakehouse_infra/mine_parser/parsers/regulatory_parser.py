@@ -18,8 +18,8 @@ class RegulatoryParser(BaseParser):
                  правила безопасности, стандарты.
     """
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, incident_id: Optional[str] = None, config_path: str = "./config"):
+        super().__init__(incident_id, config_path)
         self.set_table_name("regulatory_document")
     
     def supports(self, file_name: str) -> bool:
@@ -57,7 +57,7 @@ class RegulatoryParser(BaseParser):
             'effective_date': effective_date,
             'normative_value': '; '.join(normative_values) if normative_values else None,
             'section': '; '.join(sections) if sections else None,
-            '_source_file': file_name
+            'source_file': file_name
         }
         
         # Очищаем строковые поля
@@ -92,7 +92,7 @@ class RegulatoryParser(BaseParser):
         elif 'safety' in name_lower or 'безопасност' in name_lower:
             return "Правила безопасности в угольных шахтах"
         
-        return 'None'
+        return None
     
     def _extract_doc_number(self, content: str) -> Optional[str]:
         """Извлекает номер документа"""

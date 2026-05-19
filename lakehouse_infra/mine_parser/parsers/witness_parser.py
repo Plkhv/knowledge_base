@@ -15,10 +15,8 @@ class WitnessParser(BaseParser):
     Активно использует mawo-natasha для NER и семантического анализа.
     """
     
-    INCIDENT_ID = "INC-2023-001"
-    
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, incident_id: Optional[str] = None, config_path: str = "./config"):
+        super().__init__(incident_id, config_path)
         self.set_table_name("witness_statement")
         self._init_mawo()
     
@@ -30,10 +28,13 @@ class WitnessParser(BaseParser):
             from mawo_natasha import RealRussianEmbedding
             self.MAWODoc = MAWODoc
             self.ner_tagger = NewsNERTagger()
-            self.embedding = RealRussianEmbedding(use_navec=True)
+            self.embedding = RealRussianEmbedding(use_navec=False)
             self.mawo_available = True
         except ImportError:
             self.mawo_available = False
+            self.MAWODoc = None
+            self.ner_tagger = None
+            self.embedding = None
             print("Warning: mawo-natasha not installed")
     
     def supports(self, file_name: str) -> bool:
@@ -78,11 +79,11 @@ class WitnessParser(BaseParser):
         
         return {
             'statement_id': generate_statement_id(),
-            'incident_id': self.INCIDENT_ID,
+            'incident_id': self.incident_id,
             'witness_name': witness_name,
             'statement_datetime': statement_datetime,
             'testimony_text': testimony_text[:5000],
-            '_source_file': file_name
+            'source_file': file_name
         }
     
     def _enrich_with_mawo(self, record: Dict[str, Any], text: str) -> Dict[str, Any]:

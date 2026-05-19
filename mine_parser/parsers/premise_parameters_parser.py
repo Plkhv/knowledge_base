@@ -23,8 +23,8 @@ class PremiseParametersParser(BaseParser):
     # Норматив по негорючим веществам
     NORMATIVE_NONCOMBUSTIBLE = 85.0
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, config_path: str = "./config", incident_id: str = None):
+        super().__init__(config_path, incident_id)
         self.set_table_name("premise_parameters")
     
     def supports(self, file_name: str) -> bool:
@@ -203,11 +203,11 @@ class PremiseParametersParser(BaseParser):
             noncombustible = self._to_float(parts[indices['noncombustible']]) if 'noncombustible' in indices and indices['noncombustible'] < len(parts) else None
             is_compliant = None
             if noncombustible is not None:
-                is_compliant = 1 if noncombustible >= self.NORMATIVE_NONCOMBUSTIBLE else 0
+                is_compliant = bool(1 if noncombustible >= self.NORMATIVE_NONCOMBUSTIBLE else 0)
             
             # Наличие орошения
             water_spray_str = parts[indices['water_spray']] if 'water_spray' in indices and indices['water_spray'] < len(parts) else None
-            water_spray_present = 1 if water_spray_str and water_spray_str.lower() in ['да', 'yes', '+'] else 0
+            water_spray_present = bool(1 if water_spray_str and water_spray_str.lower() in ['да', 'yes', '+'] else 0)
             
             record = {
                 'param_id': generate_premise_param_id(),

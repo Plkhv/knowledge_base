@@ -18,10 +18,8 @@ class AffectedAreasParser(BaseParser):
     """
     
     # ID инцидента (будет установлен post-hoc)
-    INCIDENT_ID = "INC-2023-001"
-    
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, incident_id: Optional[str] = None, config_path: str = "./config"):
+        super().__init__(incident_id, config_path)
         self.set_table_name("affected_areas")
     
     def supports(self, file_name: str) -> bool:
@@ -51,7 +49,7 @@ class AffectedAreasParser(BaseParser):
         
         # Добавляем incident_id
         for record in records:
-            record['incident_id'] = self.INCIDENT_ID
+            record['incident_id'] = self.incident_id
         
         return records
     
@@ -72,13 +70,13 @@ class AffectedAreasParser(BaseParser):
         # Первичный очаг (из вывода)
         primary_record = {
             'area_id': generate_affected_area_id(),
-            'incident_id': self.INCIDENT_ID,  
+            'incident_id': self.incident_id,  
             'premise_id': f"Лава {lava_name}",
             'damage_type': 'первичный взрыв',
             'damage_description': f"очаг взрыва, концентрация CH4 {ch4_value}%",
-            'is_primary_blast_zone': 1,
-            'geo_metca': f"секции {sections_match.group(1)}-{sections_match.group(2)}" if sections_match else None,
-            '_source_file': file_name
+            'is_primary_blast_zone': True,
+            'geo_meta': f"секции {sections_match.group(1)}-{sections_match.group(2)}" if sections_match else None,
+            'source_file': file_name
         }
         records.append(primary_record)
         
@@ -97,13 +95,13 @@ class AffectedAreasParser(BaseParser):
                     premise_name = premise_match.group(1).strip()
                     record = {
                         'area_id': generate_affected_area_id(),
-                        'incident_id': self.INCIDENT_ID,  # ❌ хардкод
+                        'incident_id': self.incident_id,  # ❌ хардкод
                         'premise_id': premise_name,
                         'damage_type': 'поражение ударной волной',
                         'damage_description': f"зона поражения: {premise_name}",
-                        'is_primary_blast_zone': 0,
-                        'geo_metca': None,
-                        '_source_file': file_name
+                        'is_primary_blast_zone': False,
+                        'geo_meta': None,
+                        'source_file': file_name
                     }
                     records.append(record)
         
@@ -175,13 +173,13 @@ class AffectedAreasParser(BaseParser):
                     
                     record = {
                         'area_id': generate_affected_area_id(),
-                        'incident_id': self.INCIDENT_ID,  # ❌ хардкод
+                        'incident_id': self.incident_id,  # ❌ хардкод
                         'premise_id': premise_id,
                         'damage_type': damage_type,
                         'damage_description': sub_item.strip(),
-                        'is_primary_blast_zone': 1 if 'секции 138-148' in sub_item or 'верхняя' in sub_item else 0,
-                        'geo_metca': self._extract_sections(sub_item),
-                        '_source_file': file_name
+                        'is_primary_blast_zone': ('секции 138-148' in sub_item or 'верхняя' in sub_item),
+                        'geo_meta': self._extract_sections(sub_item),
+                        'source_file': file_name
                     }
                     records.append(record)
         
@@ -267,13 +265,13 @@ class AffectedAreasParser(BaseParser):
                     
                     record = {
                         'area_id': generate_affected_area_id(),
-                        'incident_id': self.INCIDENT_ID,  # ❌ хардкод
+                        'incident_id': self.incident_id,  # ❌ хардкод
                         'premise_id': premise_id,
                         'damage_type': damage_type,
                         'damage_description': fact,
-                        'is_primary_blast_zone': 1 if 'секции 138-148' in fact or 'секций 138-148' in fact else 0,
-                        'geo_metca': self._extract_sections(fact),
-                        '_source_file': file_name
+                        'is_primary_blast_zone': ('секции 138-148' in fact or 'секций 138-148' in fact),
+                        'geo_meta': self._extract_sections(fact),
+                        'source_file': file_name
                     }
                     records.append(record)
         
@@ -315,13 +313,13 @@ class AffectedAreasParser(BaseParser):
             for match in matches:
                 record = {
                     'area_id': generate_affected_area_id(),
-                    'incident_id': self.INCIDENT_ID,
+                    'incident_id': self.incident_id,
                     'premise_id': match,
                     'damage_type': 'повреждения',
                     'damage_description': 'выработка находится в зоне поражения',
-                    'is_primary_blast_zone': 0,
-                    'geo_metca': None,
-                    '_source_file': file_name
+                    'is_primary_blast_zone': False,
+                    'geo_meta': None,
+                    'source_file': file_name
                 }
                 records.append(record)
         

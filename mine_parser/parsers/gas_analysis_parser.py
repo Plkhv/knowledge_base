@@ -23,8 +23,8 @@ class GasAnalysisParser(BaseParser):
     # Порог аномалии для CH4
     CH4_ANOMALY_THRESHOLD = 1.0
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, config_path: str = "./config", incident_id: str = None):
+        super().__init__(config_path, incident_id)
         self.set_table_name("gas_analysis")
     
     def supports(self, file_name: str) -> bool:
@@ -123,7 +123,7 @@ class GasAnalysisParser(BaseParser):
             note = parts[indices['note']] if 'note' in indices and indices['note'] < len(parts) else None
             
             # Определяем аномалию
-            is_anomaly = 1 if ch4 and ch4 >= self.CH4_ANOMALY_THRESHOLD else 0
+            is_anomaly = bool(1 if ch4 and ch4 >= self.CH4_ANOMALY_THRESHOLD else 0)
             
             # Высота замера (по умолчанию 0 см - у почвы)
             measurement_height_cm = 0.0

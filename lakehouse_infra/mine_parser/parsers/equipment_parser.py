@@ -16,8 +16,8 @@ class EquipmentParser(BaseParser):
     Поддерживает: комбайны, конвейеры, крепь.
     """
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, incident_id: Optional[str] = None, config_path: str = "./config"):
+        super().__init__(incident_id, config_path)
         self.set_table_name("equipment")
     
     def supports(self, file_name: str) -> bool:
@@ -49,7 +49,7 @@ class EquipmentParser(BaseParser):
             'spark_safety_class': self._extract_spark_safety(content),
             'location_at_incident': self._extract_location(content, file_name),
             'manufacturer_requirements': self._extract_requirements(content),
-            '_source_file': file_name
+            'source_file': file_name
         }
         
         # Очищаем все строковые поля

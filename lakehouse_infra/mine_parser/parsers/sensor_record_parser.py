@@ -18,7 +18,6 @@ class SensorRecordParser(BaseParser):
     """
     
     # ID инцидента (будет установлен post-hoc)
-    INCIDENT_ID = "INC-2023-001"
     
     # Пороговые значения для определения критичности
     THRESHOLDS = {
@@ -27,8 +26,8 @@ class SensorRecordParser(BaseParser):
         'SPEED': {'min': 0.5, 'max': 4.0},
     }
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, incident_id: Optional[str] = None, config_path: str = "./config"):
+        super().__init__(incident_id, config_path)
         self.set_table_name("sensor_record")
     
 # parsers/sensor_record_parser.py - добавьте в supports():
@@ -57,7 +56,7 @@ class SensorRecordParser(BaseParser):
         
         # Добавляем incident_id и вычисляем is_critical
         for record in records:
-            record['incident_id'] = self.INCIDENT_ID
+            record['incident_id'] = self.incident_id
             record['is_critical'] = self._check_critical(
                 record.get('sensor_type'),
                 record.get('value')
@@ -98,7 +97,7 @@ class SensorRecordParser(BaseParser):
                 
                 record = {
                     'record_id': generate_sensor_record_id(),
-                    'incident_id': self.INCIDENT_ID,
+                    'incident_id': self.incident_id,
                     'sensor_id': row.get('sensor_id', '').strip(),
                     'sensor_type': sensor_type,
                     'record_dttm': record_dttm,
@@ -108,7 +107,7 @@ class SensorRecordParser(BaseParser):
                     'data_quality_flag': data_quality_flag,
                     'x_coordinate': None,
                     'y_coordinate': None,
-                    '_source_file': file_name
+                    'source_file': file_name
                 }
                 
                 records.append(record)
@@ -152,7 +151,7 @@ class SensorRecordParser(BaseParser):
             
             record = {
                 'record_id': generate_sensor_record_id(),
-                'incident_id': self.INCIDENT_ID,
+                'incident_id': self.incident_id,
                 'sensor_id': sensor_id,
                 'sensor_type': self._normalize_sensor_type(sensor_type),
                 'record_dttm': record_dttm,
@@ -162,7 +161,7 @@ class SensorRecordParser(BaseParser):
                 'data_quality_flag': 1,
                 'x_coordinate': None,
                 'y_coordinate': None,
-                '_source_file': file_name
+                'source_file': file_name
             }
             records.append(record)
         
@@ -217,13 +216,13 @@ class SensorRecordParser(BaseParser):
         
         if sensor_type == 'CH4':
             threshold = self.THRESHOLDS['CH4']['alarm']
-            return 1 if value >= threshold else 0
+            return value >= threshold
         elif sensor_type == 'CO':
             threshold = self.THRESHOLDS['CO']['alarm']
-            return 1 if value >= threshold else 0
+            return value >= threshold
         elif sensor_type == 'SPEED':
             min_val = self.THRESHOLDS['SPEED']['min']
             max_val = self.THRESHOLDS['SPEED']['max']
-            return 1 if value < min_val or value > max_val else 0
+            return value < min_val or value > max_val
         
-        return 0
+        return False

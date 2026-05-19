@@ -17,8 +17,8 @@ class CertificateParser(BaseParser):
     Поддерживает: сертификаты соответствия, протоколы испытаний.
     """
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, config_path: str = "./config", incident_id: str = None):
+        super().__init__(config_path, incident_id)
         self.set_table_name("equipment_certificate")
         self.equipment_mapping = {}
     
@@ -44,6 +44,7 @@ class CertificateParser(BaseParser):
         for block in certificate_blocks:
             record = self._parse_certificate_block(block, file_name)
             if record:
+                record['incident_id'] = self.incident_id
                 records.append(record)
         
         return records

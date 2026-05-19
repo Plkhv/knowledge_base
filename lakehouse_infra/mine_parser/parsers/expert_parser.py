@@ -19,8 +19,8 @@ class ExpertParser(BaseParser):
     Выходные поля: expert_id, profession, expert_lastname, expert_firstname, expert_middlename, category
     """
     
-    def __init__(self, config_path: str = "./config", incident_id: str = 'None'):
-        super().__init__(config_path, incident_id)
+    def __init__(self, incident_id: Optional[str] = None, config_path: str = "./config"):
+        super().__init__(incident_id, config_path)
         self.set_table_name("expert_dictionary")
     
     def supports(self, file_name: str) -> bool:
@@ -39,16 +39,20 @@ class ExpertParser(BaseParser):
         if file_ext == '.csv':
             return self._parse_csv(content, file_name)
         elif file_ext in ['.xlsx', '.xls']:
-            return self._parse_excel_file(file_name)
+            # xlsx обрабатывается через parse_file() в BaseParser, не через parse()
+            return []
         else:
             return self._parse_text(content, file_name)
     
     def _parse_csv(self, content: str, file_name: str) -> List[Dict[str, Any]]:
         """Парсит CSV файл с реестром экспертов"""
         records = []
+        # Снимаем BOM если файл был прочитан как utf-8 вместо utf-8-sig
+        content = content.lstrip('\ufeff')
         
         try:
             # Пробуем разные разделители
+            # utf-8-sig первым: снимает BOM-символ (\ufeff) из заголовка
             for delimiter in [';', ',', '\t']:
                 try:
                     csv_reader = csv.reader(io.StringIO(content), delimiter=delimiter)
@@ -105,7 +109,7 @@ class ExpertParser(BaseParser):
                                 'profession': profession,
                                 'category': category,
                                 'expiry_date': expiry_date,
-                                '_source_file': Path(file_name).name
+                                'source_file': Path(file_name).name
                             }
                             
                             # Добавляем только если есть ФИО
@@ -179,7 +183,7 @@ class ExpertParser(BaseParser):
                     'profession': profession,
                     'category': category,
                     'expiry_date': expiry_date,
-                    '_source_file': Path(file_path).name
+                    'source_file': Path(file_path).name
                 }
                 
                 if lastname:
@@ -211,7 +215,7 @@ class ExpertParser(BaseParser):
                     'profession': None,
                     'category': None,
                     'expiry_date': None,
-                    '_source_file': file_name
+                    'source_file': file_name
                 }
                 records.append(record)
         
@@ -232,21 +236,21 @@ class ExpertParser(BaseParser):
         
         return lastname, firstname, middlename
     
-    def _parse_category(self, value) -> Optional[int]:
-        """Парсит категорию эксперта в int"""
+    def _parse_category(self, value) -> Optional[str]:
+        """Парсит категорию эксперта — возвращает строку (схема category VARCHAR)"""
         if value is None:
             return None
         
         try:
             if isinstance(value, (int, float)):
-                return int(value)
+                return str(int(value)) if not __import__("math").isnan(float(value)) else None
             
             val_str = str(value).strip()
             if val_str == 'nan' or val_str == '':
                 return None
             
             # Ищем цифру (1, 2, 3)
-            match = re.search(r'[123]', val_str)
-            return int(match.group()) if match else None
+            match = re.search(r'[1-9]', val_str)
+            return str(match.group()) if match else None
         except:
-            return None 
+            return None

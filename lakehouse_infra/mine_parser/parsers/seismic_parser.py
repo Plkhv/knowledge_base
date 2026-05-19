@@ -26,8 +26,8 @@ class SeismicParser(BaseParser):
     MINE_LATITUDE = 49.8200
     MINE_LONGITUDE = 73.1200
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, incident_id: Optional[str] = None, config_path: str = "./config"):
+        super().__init__(incident_id, config_path)
         self.set_table_name("seismic_event")
     
     def supports(self, file_name: str) -> bool:
@@ -101,7 +101,7 @@ class SeismicParser(BaseParser):
             'magnitude': self._to_float(magnitude),
             'energy_class': self._to_float(energy_class),
             'source': str(source).strip() if source else 'unknown',
-            '_source_file': file_name
+            'source_file': file_name
         }
         
         return record if record['event_dttm'] else None
@@ -133,7 +133,7 @@ class SeismicParser(BaseParser):
             'magnitude': props.get('mag'),
             'energy_class': None,
             'source': props.get('net', 'USGS'),
-            '_source_file': file_name
+            'source_file': file_name
         }
         
         # Добавляем расчетное расстояние
@@ -206,7 +206,7 @@ class SeismicParser(BaseParser):
                 'magnitude': self._to_float(parts[indices['magnitude']]) if 'magnitude' in indices else None,
                 'energy_class': self._to_float(parts[indices['energy_class']]) if 'energy_class' in indices else None,
                 'source': self._extract_source_from_text(content),
-                '_source_file': file_name
+                'source_file': file_name
             }
             
             # Добавляем расчетное расстояние

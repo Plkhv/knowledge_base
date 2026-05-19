@@ -20,8 +20,8 @@ class PremiseParser(BaseParser):
     # Константы
     COMPANY_ID = "COMP-00001"  # ID шахты им. Костенко
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, config_path: str = "./config", incident_id: str = None):
+        super().__init__(config_path, incident_id)
         self.set_table_name("premise")
         # Хранилище для объединения данных из разных файлов
         self.premises_cache = {}

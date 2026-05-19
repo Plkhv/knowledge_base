@@ -18,13 +18,12 @@ class PremiseParametersParser(BaseParser):
     """
     
     # ID инцидента (будет установлен post-hoc)
-    INCIDENT_ID = "INC-2023-001"
     
     # Норматив по негорючим веществам
     NORMATIVE_NONCOMBUSTIBLE = 85.0
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, incident_id: Optional[str] = None, config_path: str = "./config"):
+        super().__init__(incident_id, config_path)
         self.set_table_name("premise_parameters")
     
     def supports(self, file_name: str) -> bool:
@@ -55,7 +54,7 @@ class PremiseParametersParser(BaseParser):
         
         # Добавляем incident_id
         for record in records:
-            record['incident_id'] = self.INCIDENT_ID
+            record['incident_id'] = self.incident_id
         
         return records
     
@@ -111,7 +110,7 @@ class PremiseParametersParser(BaseParser):
             
             record = {
                 'param_id': generate_premise_param_id(),
-                'incident_id': self.INCIDENT_ID,
+                'incident_id': self.incident_id,
                 'location': location,
                 'measurement_date': DateParser.parse_to_str(measurement_date) if measurement_date else None,
                 'param_type': 'ventilation',
@@ -138,7 +137,7 @@ class PremiseParametersParser(BaseParser):
                 'water_spray_present': None,
                 'water_spray_flow_l_min': None,
                 
-                '_source_file': file_name
+                'source_file': file_name
             }
             
             records.append(record)
@@ -203,15 +202,15 @@ class PremiseParametersParser(BaseParser):
             noncombustible = self._to_float(parts[indices['noncombustible']]) if 'noncombustible' in indices and indices['noncombustible'] < len(parts) else None
             is_compliant = None
             if noncombustible is not None:
-                is_compliant = 1 if noncombustible >= self.NORMATIVE_NONCOMBUSTIBLE else 0
+                is_compliant = (noncombustible >= self.NORMATIVE_NONCOMBUSTIBLE)
             
             # Наличие орошения
             water_spray_str = parts[indices['water_spray']] if 'water_spray' in indices and indices['water_spray'] < len(parts) else None
-            water_spray_present = 1 if water_spray_str and water_spray_str.lower() in ['да', 'yes', '+'] else 0
+            water_spray_present = (water_spray_str.lower() in ['да', 'yes', '+'] if water_spray_str else False)
             
             record = {
                 'param_id': generate_premise_param_id(),
-                'incident_id': self.INCIDENT_ID,
+                'incident_id': self.incident_id,
                 'location': location,
                 'measurement_date': None,  # квартальный отчет без конкретной даты
                 'param_type': 'dust',
@@ -238,7 +237,7 @@ class PremiseParametersParser(BaseParser):
                 'vacuum_pressure_mmH2O': None,
                 'degassing_efficiency_percent': None,
                 
-                '_source_file': file_name
+                'source_file': file_name
             }
             
             records.append(record)
@@ -278,7 +277,7 @@ class PremiseParametersParser(BaseParser):
                             
                             record = {
                                 'param_id': generate_premise_param_id(),
-                                'incident_id': self.INCIDENT_ID,
+                                'incident_id': self.incident_id,
                                 'location': 'Вакуум-насосная станция (Западный ствол)',
                                 'measurement_date': measurement_date,
                                 'param_type': 'degassing',
@@ -286,7 +285,21 @@ class PremiseParametersParser(BaseParser):
                                 'ch4_concentration_percent': ch4,
                                 'ch4_flow_m3_min': ch4_flow,
                                 'vacuum_pressure_mmH2O': pressure,
-                                '_source_file': file_name
+                                'degassing_efficiency_percent': None,
+                                'inert_dust_applied_kg': None,
+                                'noncombustible_content_percent': None,
+                                'normative_noncombustible_percent': None,
+                                'is_compliant': None,
+                                'dust_removal_water_m3': None,
+                                'dust_removal_frequency': None,
+                                'water_spray_present': None,
+                                'water_spray_flow_l_min': None,
+                                'air_flow_m3_min': None,
+                                'air_velocity_mps': None,
+                                'cross_section_m2': None,
+                                'leakage_coefficient': None,
+                                'distribution_coefficient': None,
+                                'source_file': file_name
                             }
                             records.append(record)
     
@@ -307,15 +320,29 @@ class PremiseParametersParser(BaseParser):
                         
                         record = {
                             'param_id': generate_premise_param_id(),
-                            'incident_id': self.INCIDENT_ID,
+                            'incident_id': self.incident_id,
                             'location': location,
-                            'measurement_date': '2023-10-24',
+                            'measurement_date': self._parse_date_from_content(content),
                             'param_type': 'degassing',
                             'gas_flow_m3_min': gas_flow,
                             'ch4_concentration_percent': ch4,
                             'ch4_flow_m3_min': ch4_flow,
                             'vacuum_pressure_mmH2O': pressure,
-                            '_source_file': file_name
+                            'degassing_efficiency_percent': None,
+                            'inert_dust_applied_kg': None,
+                            'noncombustible_content_percent': None,
+                            'normative_noncombustible_percent': None,
+                            'is_compliant': None,
+                            'dust_removal_water_m3': None,
+                            'dust_removal_frequency': None,
+                            'water_spray_present': None,
+                            'water_spray_flow_l_min': None,
+                            'air_flow_m3_min': None,
+                            'air_velocity_mps': None,
+                            'cross_section_m2': None,
+                            'leakage_coefficient': None,
+                            'distribution_coefficient': None,
+                            'source_file': file_name
                         }
                         records.append(record)
         
@@ -340,12 +367,29 @@ class PremiseParametersParser(BaseParser):
                 
                 record = {
                     'param_id': generate_premise_param_id(),
-                    'incident_id': self.INCIDENT_ID,
+                    'incident_id': self.incident_id,
                     'location': location,
                     'measurement_date': None,
                     'param_type': 'ventilation',
                     'air_flow_m3_min': air_flow,
-                    '_source_file': file_name
+                    'air_velocity_mps': None,
+                    'cross_section_m2': None,
+                    'ch4_concentration_percent': None,
+                    'leakage_coefficient': None,
+                    'distribution_coefficient': None,
+                    'gas_flow_m3_min': None,
+                    'ch4_flow_m3_min': None,
+                    'vacuum_pressure_mmH2O': None,
+                    'degassing_efficiency_percent': None,
+                    'inert_dust_applied_kg': None,
+                    'noncombustible_content_percent': None,
+                    'normative_noncombustible_percent': None,
+                    'is_compliant': None,
+                    'dust_removal_water_m3': None,
+                    'dust_removal_frequency': None,
+                    'water_spray_present': None,
+                    'water_spray_flow_l_min': None,
+                    'source_file': file_name
                 }
                 records.append(record)
         

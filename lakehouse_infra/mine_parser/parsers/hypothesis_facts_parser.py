@@ -15,8 +15,6 @@ class HypothesisFactsParser(BaseParser):
     Использует mawo-natasha для семантического поиска.
     """
     
-    INCIDENT_ID = "INC-2023-001"
-    
     # Гипотезы с ключевыми словами и семантическими векторами
     HYPOTHESES = {
         'HYP-001': {
@@ -46,8 +44,8 @@ class HypothesisFactsParser(BaseParser):
         },
     }
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, incident_id: Optional[str] = None, config_path: str = "./config"):
+        super().__init__(incident_id, config_path)
         self.set_table_name("hypotesis_prove_facts")
         self._init_mawo()
         self._semantic_vectors = {}
@@ -63,6 +61,7 @@ class HypothesisFactsParser(BaseParser):
             # Не вызываем _precompute_semantic_vectors() если не нужно
         except ImportError:
             self.mawo_available = False
+            self.embedding = None
             print("Warning: mawo-natasha not installed")
     
     def _get_embeddings_safe(self, doc) -> List:
@@ -175,11 +174,11 @@ class HypothesisFactsParser(BaseParser):
                         'fact_id': generate_fact_id(),
                         'hypotesis_id': hyp_id,
                         'source_name': file_name,
-                        'is_prove': 1,
+                        'is_prove': True,
                         'fact_text': sentence[:500],
                         'match_type': 'keyword',
                         'keyword': keyword,
-                        '_source_file': file_name
+                        'source_file': file_name
                     }
                     facts.append(fact)
                     break  # одно предложение - один факт на гипотезу
@@ -229,11 +228,11 @@ class HypothesisFactsParser(BaseParser):
                         'fact_id': generate_fact_id(),
                         'hypotesis_id': hyp_id,
                         'source_name': file_name,
-                        'is_prove': 1,
+                        'is_prove': True,
                         'fact_text': sentence[:500],
                         'match_type': 'semantic',
-                        'similarity_score': round(float(similarity), 4),
-                        '_source_file': file_name
+                        'keyword': None,
+                        'source_file': file_name
                     }
                     facts.append(fact)
             except Exception as e:

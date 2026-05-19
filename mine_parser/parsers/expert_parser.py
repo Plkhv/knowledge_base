@@ -239,7 +239,7 @@ class ExpertParser(BaseParser):
         
         try:
             if isinstance(value, (int, float)):
-                return int(value)
+                return str(int(value))
             
             val_str = str(value).strip()
             if val_str == 'nan' or val_str == '':
@@ -247,6 +247,6 @@ class ExpertParser(BaseParser):
             
             # Ищем цифру (1, 2, 3)
             match = re.search(r'[123]', val_str)
-            return int(match.group()) if match else None
+            return match.group() if match else None
         except:
             return None 

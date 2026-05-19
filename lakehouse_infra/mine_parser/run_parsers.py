@@ -174,7 +174,7 @@ def main():
     parser.add_argument(
         '--input', '-i',
         type=str,
-        default='mine_parser\\data',
+        default='./data',
         help='Путь к директории с входными файлами'
     )
     parser.add_argument(

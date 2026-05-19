@@ -30,8 +30,8 @@ class ChronologyParser(BaseParser):
         'тушение': ['тушим', 'огнетушитель', 'затушить', 'вода'],
     }
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, config_path: str = "./config", incident_id: str = None):
+        super().__init__(config_path, incident_id)
         self.set_table_name("chronology_incident")
         self._init_mawo()
     

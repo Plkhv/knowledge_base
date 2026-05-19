@@ -18,13 +18,12 @@ class GasAnalysisParser(BaseParser):
     """
     
     # ID инцидента (будет установлен post-hoc)
-    INCIDENT_ID = "INC-2023-001"
     
     # Порог аномалии для CH4
     CH4_ANOMALY_THRESHOLD = 1.0
     
-    def __init__(self, config_path: str = "./config"):
-        super().__init__(config_path)
+    def __init__(self, incident_id: Optional[str] = None, config_path: str = "./config"):
+        super().__init__(incident_id, config_path)
         self.set_table_name("gas_analysis")
     
     def supports(self, file_name: str) -> bool:
@@ -123,14 +122,14 @@ class GasAnalysisParser(BaseParser):
             note = parts[indices['note']] if 'note' in indices and indices['note'] < len(parts) else None
             
             # Определяем аномалию
-            is_anomaly = 1 if ch4 and ch4 >= self.CH4_ANOMALY_THRESHOLD else 0
+            is_anomaly = (ch4 >= self.CH4_ANOMALY_THRESHOLD) if ch4 is not None else None
             
             # Высота замера (по умолчанию 0 см - у почвы)
             measurement_height_cm = 0.0
             
             record = {
                 'measurement_id': generate_gas_measurement_id(),
-                'incident_id': self.INCIDENT_ID,
+                'incident_id': self.incident_id,
                 'location': location,
                 'measurement_dttm': measurement_dttm,
                 'ch4_percent': ch4,
@@ -138,7 +137,7 @@ class GasAnalysisParser(BaseParser):
                 'measurement_height_cm': measurement_height_cm,
                 'is_anomaly': is_anomaly,
                 'note': note,
-                '_source_file': file_name
+                'source_file': file_name
             }
             
             records.append(record)
