@@ -36,7 +36,7 @@ class Database:
         else:
             logger.info(f"Tables already exist: {existing_tables}")
         
-        self._session_factory = sessionmaker(bind=self._engine)
+        self._session_factory = sessionmaker(bind=self._engine, expire_on_commit=False)
     
     @property
     def session(self) -> Session:

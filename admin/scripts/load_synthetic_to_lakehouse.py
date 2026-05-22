@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
 import os
 import sys
-"""
-Скрипт для загрузки синтетических данных в Lakehouse (MinIO + Iceberg)
-Данные будут доступны через Trino и сохранятся в MinIO
+"""Скрипт загрузки данных в Lakehouse (MinIO + Iceberg).
+
+По умолчанию сохраняет прежнее поведение и грузит синтетические данные.
+
+Для загрузки *реальных* таблиц по модели из Excel используйте режим `--real`:
+
+    python load_synthetic_to_lakehouse.py --real
+
+Опции реального загрузчика (пути к Модель.xlsx и папке с JSON) можно передавать
+после `--real` — они будут прокинуты в `lakehouse_model_loader.py`.
 """
 if sys.platform == 'win32':
     os.environ['OPENBLAS_NUM_THREADS'] = '1'
@@ -18,6 +25,7 @@ import random
 from trino.dbapi import connect
 import time
 import requests
+from pathlib import Path
 
 # ===================== КОНФИГУРАЦИЯ =====================
 TRINO_HOST = "localhost"
@@ -345,6 +353,14 @@ def verify_data():
 
 
 def main():
+    # Новый режим: загрузка реальных таблиц по Модель.xlsx + JSON.
+    if "--real" in sys.argv[1:]:
+        sys.argv.remove("--real")
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from lakehouse_model_loader import main as real_main
+
+        return real_main(sys.argv[1:])
+
     print("=" * 60)
     print("🚀 Загрузка синтетических данных в Lakehouse (MinIO + Iceberg)")
     print("=" * 60)
