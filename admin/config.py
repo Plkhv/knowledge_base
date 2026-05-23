@@ -22,7 +22,7 @@ class Config:
     TRINO_HOST = os.getenv("TRINO_HOST", "localhost")
     TRINO_PORT = os.getenv("TRINO_PORT", "8082")
     TRINO_CATALOG = os.getenv("TRINO_CATALOG", "iceberg")
-    TRINO_SCHEMA = os.getenv("TRINO_SCHEMA", "lakehouse")
+    TRINO_SCHEMA = os.getenv("TRINO_SCHEMA", "mine")
     # Trino requires a user header (X-Trino-User). Default keeps backward compatibility.
     TRINO_USER = os.getenv("TRINO_USER", "admin")
     
