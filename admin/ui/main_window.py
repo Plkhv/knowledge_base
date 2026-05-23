@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (
     QTabWidget, QPushButton, QTreeWidget, QTreeWidgetItem,
     QSplitter, QTextEdit, QMessageBox, QLabel,
     QHeaderView, QInputDialog, QDialog, QStatusBar, QLineEdit,
+    QFileDialog,
     QFormLayout, QDialogButtonBox, QComboBox, QSizePolicy
 )
 from PyQt6.QtCore import Qt
@@ -12,7 +13,13 @@ from services.lakehouse_service import LakehouseService
 from ui.table_viewer import TableViewerWidget
 from ui.login_dialog import LoginDialog
 from db.models import UserRole
+from pathlib import Path
+import json
+import shutil
+import subprocess
 import time
+
+AIRFLOW_DAG_ID = "parallel_trino_loader_opt"
 
 class LakehouseAdminPanel(QMainWindow):
     def __init__(self):
@@ -260,6 +267,8 @@ class LakehouseAdminPanel(QMainWindow):
     def setup_ui(self):
         self.setWindowTitle("Lakehouse Admin Panel")
         self.setGeometry(100, 100, 1400, 800)
+        repo_root = Path(__file__).resolve().parents[2]
+        self.data_dir = repo_root / "lakehouse_infra" / "mine_parser" / "data"
         
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -281,6 +290,10 @@ class LakehouseAdminPanel(QMainWindow):
         self.refresh_btn = QPushButton("🔄 Обновить таблицы")
         self.refresh_btn.clicked.connect(self.load_tables)
         toolbar_layout.addWidget(self.refresh_btn)
+
+        self.add_file_btn = QPushButton("📁 Добавить файл")
+        self.add_file_btn.clicked.connect(self.add_files_to_data)
+        toolbar_layout.addWidget(self.add_file_btn)
 
         self.users_btn = QPushButton("👥 Пользователи")
         self.users_btn.clicked.connect(self.open_user_management)
@@ -398,6 +411,101 @@ class LakehouseAdminPanel(QMainWindow):
             self.statusBar().showMessage(f"Загружено {len(tables)} таблиц", 2000)
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", str(e))
+
+    def add_files_to_data(self):
+        files, _ = QFileDialog.getOpenFileNames(
+            self,
+            "Выберите файлы для загрузки",
+            str(Path.home()),
+            "All Files (*)",
+        )
+
+        if not files:
+            return
+
+        try:
+            self.data_dir.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Не удалось создать папку data:\n{e}")
+            return
+
+        copied = 0
+        overwritten = 0
+        errors = []
+        uploaded_files = []
+
+        for file_name in files:
+            source_path = Path(file_name)
+            target_path = self.data_dir / source_path.name
+
+            try:
+                if target_path.exists():
+                    overwritten += 1
+                shutil.copy2(source_path, target_path)
+                copied += 1
+                uploaded_files.append(source_path.name)
+            except Exception as e:
+                errors.append(f"{source_path.name}: {e}")
+
+        message = [f"Скопировано: {copied}"]
+        if overwritten:
+            message.append(f"Перезаписано: {overwritten}")
+        message.append(f"Папка назначения: {self.data_dir}")
+
+        trigger_error = None
+        trigger_result = None
+
+        if copied > 0 and not errors:
+            trigger_result, trigger_error = self.trigger_airflow_dag(uploaded_files)
+            if trigger_result:
+                message.append(f"DAG запущен: {AIRFLOW_DAG_ID}")
+
+        if errors:
+            message.append("\nОшибки:")
+            message.extend(f"- {item}" for item in errors)
+
+        if trigger_error:
+            message.append(f"\nОшибка запуска DAG: {trigger_error}")
+
+        if errors or trigger_error:
+            QMessageBox.warning(self, "Загрузка файлов", "\n".join(message))
+        else:
+            QMessageBox.information(self, "Загрузка файлов", "\n".join(message))
+
+    def trigger_airflow_dag(self, uploaded_files: list[str]):
+        payload = {
+            "conf": {
+                "source": "admin_ui",
+                "uploaded_files": uploaded_files,
+                "data_dir": str(self.data_dir),
+            }
+        }
+
+        try:
+            repo_root = Path(__file__).resolve().parents[2]
+            airflow_dir = repo_root / "lakehouse_infra"
+
+            result = subprocess.run(
+                [
+                    "docker", "compose", "exec", "-T",
+                    "airflow-standalone",
+                    "airflow", "dags", "trigger", AIRFLOW_DAG_ID,
+                    "--conf", json.dumps(payload, ensure_ascii=False),
+                ],
+                cwd=str(airflow_dir),
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
+
+            if result.returncode == 0:
+                output = result.stdout.strip() or result.stderr.strip() or "DAG triggered"
+                return True, output
+
+            details = result.stderr.strip() or result.stdout.strip() or "unknown error"
+            return False, details
+        except Exception as exc:
+            return False, str(exc)
     
     def on_table_clicked(self, item, column):
         table_name = item.text(0)

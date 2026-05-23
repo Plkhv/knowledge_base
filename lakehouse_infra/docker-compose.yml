@@ -331,6 +331,7 @@ services:
       - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://polaris:password@postgres:5432/airflow
       - AIRFLOW__CORE__FERNET_KEY=FB0o_zt4e3ZiqP4dL91V5Np_T7Mwz0Za-O8lF0ZgTfQ=
       - AIRFLOW__WEBSERVER__RBAC=True
+      - AIRFLOW__API__AUTH_BACKENDS=airflow.api.auth.backend.basic_auth
       - _AIRFLOW_DB_UPGRADE=True
       - _AIRFLOW_WWW_USER_CREATE=True
       - _AIRFLOW_WWW_USER_USERNAME=admin
