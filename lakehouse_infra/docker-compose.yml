@@ -88,6 +88,37 @@ services:
     networks:
       - lakehouse-net
 
+  # Инициализация таблиц Trino/Iceberg при старте инфраструктуры
+  airflow-init-trino-tables:
+    image: apache/airflow:2.10.3-python3.11
+    container_name: airflow-init-trino-tables
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+      trino:
+        condition: service_healthy
+      airflow-standalone:
+        condition: service_started
+    environment:
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://polaris:password@postgres:5432/airflow
+      - AIRFLOW__CORE__FERNET_KEY=FB0o_zt4e3ZiqP4dL91V5Np_T7Mwz0Za-O8lF0ZgTfQ=
+      - AIRFLOW__WEBSERVER__RBAC=True
+      - AIRFLOW__API__AUTH_BACKENDS=airflow.api.auth.backend.basic_auth
+      - AIRFLOW_DAG_ID=trino_tables_setup
+      - TRINO_HEALTH_URL=http://trino:8080/v1/info
+      - TRIGGER_POLL_INTERVAL=10
+      - TRIGGER_TIMEOUT_SECONDS=900
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/scripts:/opt/airflow/scripts
+      - ./mine_parser:/opt/airflow/mine_parser
+    networks:
+      - lakehouse-net
+    restart: "no"
+    command: >
+      bash -lc "python /opt/airflow/scripts/trigger_trino_tables_setup.py"
+
 #  # ===================== ZOOKEEPER =====================
 #  zookeeper:
 #    image: confluentinc/cp-zookeeper:latest
@@ -340,6 +371,7 @@ services:
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/scripts:/opt/airflow/scripts
       - ./mine_parser:/opt/airflow/mine_parser
     ports:
       - "8080:8080"
