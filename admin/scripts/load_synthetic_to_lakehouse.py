@@ -79,10 +79,10 @@ def check_trino():
     """Проверка доступности Trino"""
     try:
         resp = requests.get(f"http://{TRINO_HOST}:{TRINO_PORT}/v1/info", timeout=5)
-        print(f"✅ Trino доступен (версия: {resp.json().get('nodeVersion', {}).get('version', 'unknown')})")
+        print(f"Trino доступен (версия: {resp.json().get('nodeVersion', {}).get('version', 'unknown')})")
         return True
     except Exception as e:
-        print(f"❌ Trino недоступен: {e}")
+        print(f"Trino недоступен: {e}")
         return False
 
 
@@ -93,7 +93,7 @@ def get_trino_connection():
 
 def create_iceberg_tables():
     """Создание Iceberg таблиц в MinIO через Trino"""
-    print("\n📁 Создание Iceberg таблиц...")
+    print("\nСоздание Iceberg таблиц...")
     
     with get_trino_connection() as conn:
         cursor = conn.cursor()
@@ -101,9 +101,9 @@ def create_iceberg_tables():
         # Создаём схему
         try:
             cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {TRINO_CATALOG}.{TRINO_SCHEMA}")
-            print(f"  ✅ Схема {TRINO_CATALOG}.{TRINO_SCHEMA} создана")
+            print(f"  Схема {TRINO_CATALOG}.{TRINO_SCHEMA} создана")
         except Exception as e:
-            print(f"  ⚠️ Ошибка при создании схемы: {e}")
+            print(f"  Ошибка при создании схемы: {e}")
         
         # Создаём таблицу incidents (Iceberg с хранением в MinIO)
         cursor.execute(f"""
@@ -127,7 +127,7 @@ def create_iceberg_tables():
                 location = 's3://lakehouse/incidents/'
             )
         """)
-        print("  ✅ Таблица incidents создана (Iceberg + MinIO)")
+        print("  Таблица incidents создана (Iceberg + MinIO)")
         
         # Создаём таблицу equipment
         cursor.execute(f"""
@@ -146,7 +146,7 @@ def create_iceberg_tables():
                 location = 's3://lakehouse/equipment/'
             )
         """)
-        print("  ✅ Таблица equipment создана (Iceberg + MinIO)")
+        print("  Таблица equipment создана (Iceberg + MinIO)")
         
         # Создаём таблицу personnel
         cursor.execute(f"""
@@ -163,7 +163,7 @@ def create_iceberg_tables():
                 location = 's3://lakehouse/personnel/'
             )
         """)
-        print("  ✅ Таблица personnel создана (Iceberg + MinIO)")
+        print("  Таблица personnel создана (Iceberg + MinIO)")
         
         # Создаём таблицу investigations
         cursor.execute(f"""
@@ -182,7 +182,7 @@ def create_iceberg_tables():
                 location = 's3://lakehouse/investigations/'
             )
         """)
-        print("  ✅ Таблица investigations создана (Iceberg + MinIO)")
+        print("  Таблица investigations создана (Iceberg + MinIO)")
 
 
 def random_date(start_date, end_date):
@@ -293,7 +293,7 @@ def generate_investigation_data(incidents_df):
 def insert_dataframe_to_trino(df, table_name):
     """Вставка DataFrame в таблицу Trino"""
     if df.empty:
-        print(f"  ⚠️ Таблица {table_name} пуста, пропуск")
+        print(f"  Таблица {table_name} пуста, пропуск")
         return
     
     with get_trino_connection() as conn:
@@ -315,12 +315,12 @@ def insert_dataframe_to_trino(df, table_name):
             cursor.executemany(insert_sql, batch)
             conn.commit()
         
-        print(f"  ✅ В таблицу {table_name} загружено {len(df)} записей")
+        print(f"  В таблицу {table_name} загружено {len(df)} записей")
 
 
 def verify_data():
     """Проверка загруженных данных"""
-    print("\n🔍 Проверка загруженных данных...")
+    print("\nПроверка загруженных данных...")
     
     with get_trino_connection() as conn:
         cursor = conn.cursor()
@@ -328,26 +328,26 @@ def verify_data():
         # Проверяем incidents
         cursor.execute(f"SELECT COUNT(*) FROM {TRINO_CATALOG}.{TRINO_SCHEMA}.incidents")
         count = cursor.fetchone()[0]
-        print(f"  📊 incidents: {count} записей")
+        print(f"  incidents: {count} записей")
         
         # Проверяем equipment
         cursor.execute(f"SELECT COUNT(*) FROM {TRINO_CATALOG}.{TRINO_SCHEMA}.equipment")
         count = cursor.fetchone()[0]
-        print(f"  📊 equipment: {count} записей")
+        print(f"  equipment: {count} записей")
         
         # Проверяем personnel
         cursor.execute(f"SELECT COUNT(*) FROM {TRINO_CATALOG}.{TRINO_SCHEMA}.personnel")
         count = cursor.fetchone()[0]
-        print(f"  📊 personnel: {count} записей")
+        print(f"  personnel: {count} записей")
         
         # Проверяем investigations
         cursor.execute(f"SELECT COUNT(*) FROM {TRINO_CATALOG}.{TRINO_SCHEMA}.investigations")
         count = cursor.fetchone()[0]
-        print(f"  📊 investigations: {count} записей")
+        print(f"  investigations: {count} записей")
         
         # Пример данных
         cursor.execute(f"SELECT incident_id, incident_type, incident_date FROM {TRINO_CATALOG}.{TRINO_SCHEMA}.incidents LIMIT 3")
-        print("\n  📋 Пример инцидентов:")
+        print("\n  Пример инцидентов:")
         for row in cursor.fetchall():
             print(f"     - {row}")
 
@@ -362,19 +362,19 @@ def main():
         return real_main(sys.argv[1:])
 
     print("=" * 60)
-    print("🚀 Загрузка синтетических данных в Lakehouse (MinIO + Iceberg)")
+    print("Загрузка синтетических данных в Lakehouse (MinIO + Iceberg)")
     print("=" * 60)
     
     # Проверка Trino
     if not check_trino():
-        print("❌ Невозможно продолжить. Убедитесь, что Trino запущен.")
+        print("Невозможно продолжить. Убедитесь, что Trino запущен.")
         return
     
     # Создание таблиц Iceberg
     create_iceberg_tables()
     
     # Генерация данных
-    print("\n📊 Генерация синтетических данных...")
+    print("\nГенерация синтетических данных...")
     
     incidents_df = generate_incident_data(100)
     print(f"  - Сгенерировано инцидентов: {len(incidents_df)}")
@@ -389,7 +389,7 @@ def main():
     print(f"  - Сгенерировано расследований: {len(investigations_df)}")
     
     # Загрузка данных
-    print("\n💾 Загрузка данных в Lakehouse (Iceberg + MinIO)...")
+    print("\nЗагрузка данных в Lakehouse (Iceberg + MinIO)...")
     
     insert_dataframe_to_trino(incidents_df, f"{TRINO_CATALOG}.{TRINO_SCHEMA}.incidents")
     insert_dataframe_to_trino(equipment_df, f"{TRINO_CATALOG}.{TRINO_SCHEMA}.equipment")
@@ -400,12 +400,12 @@ def main():
     verify_data()
     
     print("\n" + "=" * 60)
-    print("✅ Загрузка завершена!")
+    print("Загрузка завершена!")
     print("=" * 60)
-    print("\n📋 Данные сохранены в MinIO (бакет 'lakehouse')")
-    print("🔍 Просмотр через админ-панель: http://localhost:8501")
-    print("🔍 Просмотр через MinIO Console: http://localhost:9001 (admin/password)")
-    print("🔍 SQL запросы через Trino: http://localhost:8082")
+    print("\nДанные сохранены в MinIO (бакет 'lakehouse')")
+    print("Просмотр через админ-панель: http://localhost:8501")
+    print("Просмотр через MinIO Console: http://localhost:9001 (credentials from environment)")
+    print("SQL запросы через Trino: http://localhost:8082")
 
 
 if __name__ == "__main__":

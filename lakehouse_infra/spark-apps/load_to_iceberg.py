@@ -14,6 +14,13 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, FloatType
 
 
+MINIO_ACCESS_KEY = os.getenv("MINIO_ROOT_USER") or os.getenv("AWS_ACCESS_KEY_ID")
+MINIO_SECRET_KEY = os.getenv("MINIO_ROOT_PASSWORD") or os.getenv("AWS_SECRET_ACCESS_KEY")
+
+if not MINIO_ACCESS_KEY or not MINIO_SECRET_KEY:
+    raise RuntimeError("MinIO credentials are not configured. Set MINIO_ROOT_USER/MINIO_ROOT_PASSWORD or AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY.")
+
+
 def get_spark_session():
     """Создаёт SparkSession как в вашем ноутбуке"""
     
@@ -24,8 +31,8 @@ def get_spark_session():
         .appName("Load to Iceberg") \
         .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
         .config("spark.hadoop.fs.s3a.endpoint", "http://minio:9000") \
-        .config("spark.hadoop.fs.s3a.access.key", "admin") \
-        .config("spark.hadoop.fs.s3a.secret.key", "password") \
+        .config("spark.hadoop.fs.s3a.access.key", MINIO_ACCESS_KEY) \
+        .config("spark.hadoop.fs.s3a.secret.key", MINIO_SECRET_KEY) \
         .config("spark.hadoop.fs.s3a.path.style.access", "true") \
         .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions") \
         .config("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog") \
@@ -34,8 +41,8 @@ def get_spark_session():
         .config("spark.sql.catalog.nessie.ref", "main") \
         .config("spark.sql.catalog.nessie.warehouse", "s3a://warehouse/") \
         .config("spark.sql.catalog.nessie.s3.endpoint", "http://minio:9000") \
-        .config("spark.sql.catalog.nessie.s3.access-key-id", "admin") \
-        .config("spark.sql.catalog.nessie.s3.secret-access-key", "password") \
+        .config("spark.sql.catalog.nessie.s3.access-key-id", MINIO_ACCESS_KEY) \
+        .config("spark.sql.catalog.nessie.s3.secret-access-key", MINIO_SECRET_KEY) \
         .getOrCreate()
     
     return spark
@@ -80,7 +87,7 @@ def get_schema_from_json(file_path, spark):
 def load_table(spark, json_path, table_name):
     """Загружает таблицу в Iceberg (как в вашем ноутбуке)"""
     
-    print(f"  📄 {table_name}.json")
+    print(f"  {table_name}.json")
     
     # Определяем схему из JSON
     schema = get_schema_from_json(json_path, spark)
@@ -93,10 +100,10 @@ def load_table(spark, json_path, table_name):
     if count > 0:
         # Создаём таблицу и загружаем данные
         df.writeTo(f"iceberg.mine.{table_name}").createOrReplace()
-        print(f"     ✅ {count} записей загружено")
+        print(f"     {count} записей загружено")
         return count
     else:
-        print(f"     ⚠️ файл пуст")
+        print(f"     файл пуст")
         return 0
 
 
@@ -116,19 +123,19 @@ def main():
         'sensor_record', 'sensor_reestr', 'witness_statement'
     ]
     
-    print("\n📤 ЗАГРУЗКА ДАННЫХ В ICEBERG")
+    print("\nЗАГРУЗКА ДАННЫХ В ICEBERG")
     print("=" * 70)
     
     # Создаём Spark сессию
     spark = get_spark_session()
-    print("✅ SparkSession с Iceberg создана!")
+    print("SparkSession с Iceberg создана!")
     
     # Создаём namespace
     try:
         spark.sql("CREATE NAMESPACE IF NOT EXISTS iceberg.mine")
-        print("✅ Schema 'nessie.mine' created")
+        print("Schema 'nessie.mine' created")
     except Exception as e:
-        print(f"⚠️ Schema: {e}")
+        print(f"Schema: {e}")
     
     loaded = 0
     for table_name in tables_to_load:
@@ -139,11 +146,11 @@ def main():
                 if count > 0:
                     loaded += 1
             else:
-                print(f"  ⚠️ {table_name}.json не найден")
+                print(f"  {table_name}.json не найден")
         except Exception as e:
-            print(f"     ❌ Ошибка: {str(e)[:150]}")
+            print(f"     Ошибка: {str(e)[:150]}")
     
-    print(f"\n✅ Загружено {loaded} из {len(tables_to_load)} таблиц")
+    print(f"\nЗагружено {loaded} из {len(tables_to_load)} таблиц")
     
     spark.stop()
 

@@ -8,6 +8,7 @@ volumes:
   kafka-data:
   zookeeper-data:
   spark-data:
+  airflow-site-packages:
 
 services:
   # ===================== POSTGRES =====================
@@ -16,17 +17,17 @@ services:
     platform: linux/amd64
     container_name: postgres
     environment:
-      POSTGRES_USER: polaris
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: polaris
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - lakehouse-net
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U polaris"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:?set POSTGRES_USER in .env}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -37,14 +38,18 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
     networks:
       - lakehouse-net
     entrypoint: >
       /bin/bash -c "
-      if PGPASSWORD=password psql -h postgres -U polaris -d postgres -tAc \"SELECT 1 FROM pg_database WHERE datname='airflow'\" | grep -q 1; then
+      if PGPASSWORD=\"$POSTGRES_PASSWORD\" psql -h postgres -U \"$POSTGRES_USER\" -d postgres -tAc \"SELECT 1 FROM pg_database WHERE datname='airflow'\" | grep -q 1; then
         echo 'Airflow database already exists';
       else
-        PGPASSWORD=password psql -h postgres -U polaris -d postgres -c 'CREATE DATABASE airflow;'
+        PGPASSWORD=\"$POSTGRES_PASSWORD\" psql -h postgres -U \"$POSTGRES_USER\" -d postgres -c 'CREATE DATABASE airflow;'
         echo 'Airflow database created';
       fi
       "
@@ -54,15 +59,15 @@ services:
     container_name: minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: password
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
     volumes:
       - minio-data:/data
     networks:
       - lakehouse-net
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
     #healthcheck:
     #  test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
     #  interval: 30s
@@ -76,10 +81,13 @@ services:
     container_name: minio-init
     depends_on:
       - minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
     entrypoint: >
       /bin/sh -c "
       sleep 5;
-      mc alias set myminio http://minio:9000 admin password;
+      mc alias set myminio http://minio:9000 \"$MINIO_ROOT_USER\" \"$MINIO_ROOT_PASSWORD\";
       mc mb myminio/lakehouse --ignore-existing;
       mc mb myminio/warehouse --ignore-existing;
       mc mb myminio/spark-events --ignore-existing;
@@ -101,23 +109,46 @@ services:
         condition: service_started
     environment:
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
-      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://polaris:password@postgres:5432/airflow
-      - AIRFLOW__CORE__FERNET_KEY=FB0o_zt4e3ZiqP4dL91V5Np_T7Mwz0Za-O8lF0ZgTfQ=
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER:?set POSTGRES_USER in .env}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${AIRFLOW_DB_NAME:?set AIRFLOW_DB_NAME in .env}
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY:?set AIRFLOW_FERNET_KEY in .env}
       - AIRFLOW__WEBSERVER__RBAC=True
-      - AIRFLOW__API__AUTH_BACKENDS=airflow.api.auth.backend.basic_auth
+      - AIRFLOW__API__AUTH_BACKENDS=airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session
+      - PYTHONPATH=/home/airflow/.local/lib/python3.11/site-packages
       - AIRFLOW_DAG_ID=trino_tables_setup
       - TRINO_HEALTH_URL=http://trino:8080/v1/info
       - TRIGGER_POLL_INTERVAL=10
       - TRIGGER_TIMEOUT_SECONDS=900
     volumes:
       - ./airflow/dags:/opt/airflow/dags
-      - ./airflow/scripts:/opt/airflow/scripts
       - ./mine_parser:/opt/airflow/mine_parser
     networks:
       - lakehouse-net
     restart: "no"
     command: >
-      bash -lc "python /opt/airflow/scripts/trigger_trino_tables_setup.py"
+      bash -lc "
+      set -e;
+      echo 'Waiting for Airflow database and DAG registration...';
+      until airflow db check >/dev/null 2>&1; do sleep 5; done;
+      until airflow dags list 2>/dev/null | grep -q 'trino_tables_setup'; do sleep 5; done;
+      python -c \"from datetime import datetime, timezone; import json, subprocess; run_id = 'infra_startup_' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ'); payload = {'source': 'infra_startup', 'triggered_by': 'airflow_init_trino_tables', 'dag_id': 'trino_tables_setup'}; subprocess.run(['airflow', 'dags', 'trigger', 'trino_tables_setup', '--run-id', run_id, '--conf', json.dumps(payload, ensure_ascii=False)], check=True)\";
+      echo 'Triggered trino_tables_setup via Airflow CLI';
+      "
+
+  # Инициализация Python-зависимостей Airflow
+  airflow-init-deps:
+    image: apache/airflow:2.10.3-python3.11
+    container_name: airflow-init-deps
+    volumes:
+      - airflow-site-packages:/home/airflow/.local
+    networks:
+      - lakehouse-net
+    restart: "no"
+    command: >
+      bash -lc "
+      set -e;
+      pip install trino minio mawo-natasha mawo-slovnet;
+      echo 'Airflow Python dependencies installed';
+      "
 
 #  # ===================== ZOOKEEPER =====================
 #  zookeeper:
@@ -198,13 +229,13 @@ services:
       # Настройки хранения метаданных в MinIO
       QUARKUS_PROFILE: s3
       QUARKUS_S3_AWS_CREDENTIALS_TYPE: static
-      QUARKUS_S3_AWS_CREDENTIALS_STATIC_PROVIDER_ACCESS_KEY_ID: admin
-      QUARKUS_S3_AWS_CREDENTIALS_STATIC_PROVIDER_SECRET_ACCESS_KEY: password
+      QUARKUS_S3_AWS_CREDENTIALS_STATIC_PROVIDER_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
+      QUARKUS_S3_AWS_CREDENTIALS_STATIC_PROVIDER_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
       QUARKUS_S3_ENDPOINT_OVERRIDE: http://minio:9000
       QUARKUS_S3_PATH_STYLE_ACCESS: "true"
       NESSIE_VERSION_STORE_TYPE: IN_MEMORY
     ports:
-      - "19120:19120"
+      - "127.0.0.1:19120:19120"
     networks:
       - lakehouse-net
 
@@ -215,7 +246,10 @@ services:
     depends_on:
       - nessie
     ports:
-      - "8082:8080"
+      - "127.0.0.1:8082:8080"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
     volumes:
       - ./config/trino/catalog:/etc/trino/catalog
       - ./config/trino/catalog:/etc/trino/catalog/config.properties
@@ -241,6 +275,8 @@ services:
       - SPARK_RPC_ENCRYPTION_ENABLED=no
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
     volumes:
       - spark-data:/bitnami
       - ./spark/conf:/opt/spark/conf
@@ -248,9 +284,9 @@ services:
       - ./spark-jars/hadoop-aws-3.4.2.jar:/opt/spark/jars/hadoop-aws-3.4.2.jar
       - ./spark-jars/bundle-2.29.52.jar:/opt/spark/jars/bundle-2.29.52.jar
     ports:
-      - "7077:7077"
-      - "6066:6066"
-      - "8083:8083"
+      - "127.0.0.1:7077:7077"
+      - "127.0.0.1:6066:6066"
+      - "127.0.0.1:8083:8083"
     networks:
       - lakehouse-net
     command: >
@@ -271,13 +307,15 @@ services:
       - SPARK_RPC_ENCRYPTION_ENABLED=no
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
     volumes:
       - ./spark/conf:/opt/spark/conf
       - ./spark-apps:/opt/spark-apps
       - ./spark-jars/hadoop-aws-3.4.2.jar:/opt/spark/jars/hadoop-aws-3.4.2.jar
       - ./spark-jars/bundle-2.29.52.jar:/opt/spark/jars/bundle-2.29.52.jar
     ports:
-      - "8084:8081"
+      - "127.0.0.1:8084:8081"
     networks:
       - lakehouse-net
     command: >
@@ -298,13 +336,15 @@ services:
       - SPARK_RPC_ENCRYPTION_ENABLED=no
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
     volumes:
       - ./spark/conf:/opt/spark/conf
       - ./spark-apps:/opt/spark-apps
       - ./spark-jars/hadoop-aws-3.4.2.jar:/opt/spark/jars/hadoop-aws-3.4.2.jar
       - ./spark-jars/bundle-2.29.52.jar:/opt/spark/jars/bundle-2.29.52.jar
     ports:
-      - "8085:8081"
+      - "127.0.0.1:8085:8081"
     networks:
       - lakehouse-net
     command: >
@@ -319,12 +359,14 @@ services:
     environment:
       - SPARK_NO_DAEMONIZE=1
       - SPARK_CONF_DIR=/opt/spark/conf
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
     volumes:
       - ./spark/conf:/opt/spark/conf
       - ./spark-jars/hadoop-aws-3.4.2.jar:/opt/spark/jars/hadoop-aws-3.4.2.jar
       - ./spark-jars/bundle-2.29.52.jar:/opt/spark/jars/bundle-2.29.52.jar
     ports:
-      - "18080:18080"
+      - "127.0.0.1:18080:18080"
     networks:
       - lakehouse-net
     command: >
@@ -339,15 +381,15 @@ services:
     environment:
       - JUPYTER_ENABLE_LAB=yes
       - SPARK_MASTER=spark://spark-master:7077
-      - AWS_ACCESS_KEY_ID=admin
-      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
       - AWS_ENDPOINT_URL=http://minio:9000
     volumes:
       - ./notebooks:/home/jovyan/work
       - ./spark-jars:/home/jovyan/jars
       - ./mine_parser:/home/jovyan/mine_parser
     ports:
-      - "8888:8888"
+      - "127.0.0.1:8888:8888"
     networks:
       - lakehouse-net
 
@@ -355,26 +397,30 @@ services:
     image: apache/airflow:2.10.3-python3.11
     container_name: airflow-standalone
     depends_on:
+      airflow-init-deps:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
     environment:
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
-      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://polaris:password@postgres:5432/airflow
-      - AIRFLOW__CORE__FERNET_KEY=FB0o_zt4e3ZiqP4dL91V5Np_T7Mwz0Za-O8lF0ZgTfQ=
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER:?set POSTGRES_USER in .env}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${AIRFLOW_DB_NAME:?set AIRFLOW_DB_NAME in .env}
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY:?set AIRFLOW_FERNET_KEY in .env}
       - AIRFLOW__WEBSERVER__RBAC=True
-      - AIRFLOW__API__AUTH_BACKENDS=airflow.api.auth.backend.basic_auth
+      - AIRFLOW__API__AUTH_BACKENDS=airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session
+      - PYTHONPATH=/home/airflow/.local/lib/python3.11/site-packages
       - _AIRFLOW_DB_UPGRADE=True
       - _AIRFLOW_WWW_USER_CREATE=True
-      - _AIRFLOW_WWW_USER_USERNAME=admin
-      - _AIRFLOW_WWW_USER_PASSWORD=admin
+      - _AIRFLOW_WWW_USER_USERNAME=${AIRFLOW_ADMIN_USERNAME:?set AIRFLOW_ADMIN_USERNAME in .env}
+      - _AIRFLOW_WWW_USER_PASSWORD=${AIRFLOW_ADMIN_PASSWORD:?set AIRFLOW_ADMIN_PASSWORD in .env}
       #- _PIP_ADDITIONAL_REQUIREMENTS=minio trino mawo-natasha mawo-slovnet
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/scripts:/opt/airflow/scripts
       - ./mine_parser:/opt/airflow/mine_parser
+      - airflow-site-packages:/home/airflow/.local
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     networks:
       - lakehouse-net
     command: >

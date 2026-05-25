@@ -29,8 +29,11 @@ from pyspark.sql.types import (
 # ── Конфигурация ──────────────────────────────────────────────────────────────
 
 MINIO_ENDPOINT   = os.getenv("MINIO_ENDPOINT",   "http://minio:9000")
-MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "admin")
-MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "password")
+MINIO_ACCESS_KEY = os.getenv("MINIO_ROOT_USER") or os.getenv("MINIO_ACCESS_KEY") or os.getenv("AWS_ACCESS_KEY_ID")
+MINIO_SECRET_KEY = os.getenv("MINIO_ROOT_PASSWORD") or os.getenv("MINIO_SECRET_KEY") or os.getenv("AWS_SECRET_ACCESS_KEY")
+
+if not MINIO_ACCESS_KEY or not MINIO_SECRET_KEY:
+    raise RuntimeError("MinIO credentials are not configured. Set MINIO_ROOT_USER/MINIO_ROOT_PASSWORD or AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY.")
 BUCKET           = "lakehouse"
 WAREHOUSE_PATH   = f"s3a://{BUCKET}/warehouse"
 
@@ -461,7 +464,7 @@ def compute_incident_summary(spark: SparkSession):
 def main():
     spark = create_spark_session()
     print("=" * 60)
-    print("🔥 Mine Metrics Calculator — Spark Job")
+    print("Mine Metrics Calculator - Spark Job")
     print("=" * 60)
 
     steps = [
@@ -476,20 +479,20 @@ def main():
     errors = []
     for name, fn in steps:
         try:
-            print(f"\n▶ {name}")
+            print(f"\n> {name}")
             fn(spark)
-            print(f"  ✅ OK")
+            print(f"  OK")
         except Exception as e:
-            print(f"  ❌ FAILED: {type(e).__name__}: {e}")
+            print(f"  FAILED: {type(e).__name__}: {e}")
             errors.append((name, e))
 
     print("\n" + "=" * 60)
     if errors:
-        print(f"⚠  Завершено с {len(errors)} ошибками:")
+        print(f"Completed with {len(errors)} errors:")
         for name, e in errors:
             print(f"   - {name}: {e}")
     else:
-        print("✅ Все расчётные показатели вычислены успешно")
+        print("All calculated metrics computed successfully")
     print("=" * 60)
 
     spark.stop()

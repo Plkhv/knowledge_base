@@ -15,6 +15,7 @@ Spark приложение для расчёта всех метрик на ос
 """
 
 import argparse
+import os
 from datetime import datetime
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
@@ -23,6 +24,13 @@ from pyspark.sql.functions import (
 )
 from pyspark.sql.window import Window
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType, TimestampType
+
+
+MINIO_ACCESS_KEY = os.getenv("MINIO_ROOT_USER") or os.getenv("AWS_ACCESS_KEY_ID")
+MINIO_SECRET_KEY = os.getenv("MINIO_ROOT_PASSWORD") or os.getenv("AWS_SECRET_ACCESS_KEY")
+
+if not MINIO_ACCESS_KEY or not MINIO_SECRET_KEY:
+    raise RuntimeError("MinIO credentials are not configured. Set MINIO_ROOT_USER/MINIO_ROOT_PASSWORD or AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY.")
 
 
 # ============================================
@@ -40,11 +48,11 @@ def create_spark_session(catalog_uri: str, warehouse: str) -> SparkSession:
         .config("spark.sql.catalog.nessie.ref", "main") \
         .config("spark.sql.catalog.nessie.warehouse", warehouse) \
         .config("spark.sql.catalog.nessie.s3.endpoint", "http://minio:9000") \
-        .config("spark.sql.catalog.nessie.s3.access-key-id", "admin") \
-        .config("spark.sql.catalog.nessie.s3.secret-access-key", "password") \
+        .config("spark.sql.catalog.nessie.s3.access-key-id", MINIO_ACCESS_KEY) \
+        .config("spark.sql.catalog.nessie.s3.secret-access-key", MINIO_SECRET_KEY) \
         .config("spark.hadoop.fs.s3a.endpoint", "http://minio:9000") \
-        .config("spark.hadoop.fs.s3a.access.key", "admin") \
-        .config("spark.hadoop.fs.s3a.secret.key", "password") \
+        .config("spark.hadoop.fs.s3a.access.key", MINIO_ACCESS_KEY) \
+        .config("spark.hadoop.fs.s3a.secret.key", MINIO_SECRET_KEY) \
         .config("spark.hadoop.fs.s3a.path.style.access", "true") \
         .getOrCreate()
 
@@ -125,7 +133,7 @@ def create_metrics_tables(spark: SparkSession, catalog: str, namespace: str):
         ) USING iceberg
     """)
     
-    print("✅ Tables created/verified: fire_metrics, incident_metrics, ventilation_metrics")
+    print("Таблицы созданы: fire_metrics, incident_metrics, ventilation_metrics")
 
 
 # ============================================
@@ -135,7 +143,7 @@ def create_metrics_tables(spark: SparkSession, catalog: str, namespace: str):
 def calculate_fire_metrics(spark: SparkSession, catalog: str, namespace: str, incident_id: str):
     """Рассчитывает пожарные метрики на основе air_analysis"""
     
-    print("\n🔥 Calculating fire_metrics...")
+    print("\nCalculating fire_metrics...")
     
     # Читаем данные анализов воздуха
     air_df = spark.table(f"{catalog}.{namespace}.air_analysis") \
@@ -180,7 +188,7 @@ def calculate_fire_metrics(spark: SparkSession, catalog: str, namespace: str, in
     fire_metrics_df.writeTo(f"{catalog}.{namespace}.fire_metrics").append()
     
     count = fire_metrics_df.count()
-    print(f"   ✅ Calculated {count} fire_metrics records")
+    print(f"   Calculated {count} fire_metrics records")
 
 
 # ============================================
@@ -190,7 +198,7 @@ def calculate_fire_metrics(spark: SparkSession, catalog: str, namespace: str, in
 def calculate_incident_metrics(spark: SparkSession, catalog: str, namespace: str, incident_id: str):
     """Рассчитывает общие метрики инцидента"""
     
-    print("\n📊 Calculating incident_metrics...")
+    print("\nCalculating incident_metrics...")
     
     # 5.1. Количество погибших и пострадавших из incident_description
     incident_desc = spark.table(f"{catalog}.{namespace}.incident_description") \
@@ -258,7 +266,7 @@ def calculate_incident_metrics(spark: SparkSession, catalog: str, namespace: str
     )
     
     incident_metrics_df.writeTo(f"{catalog}.{namespace}.incident_metrics").append()
-    print(f"   ✅ Calculated 1 incident_metrics record")
+    print(f"   Calculated 1 incident_metrics record")
     print(f"      fatalities: {fatalities}, injuries: {injuries}")
     print(f"      affected_area: {affected_area_length} records")
     print(f"      is_seismic_event: {is_seismic}")
@@ -271,7 +279,7 @@ def calculate_incident_metrics(spark: SparkSession, catalog: str, namespace: str
 def calculate_ventilation_metrics(spark: SparkSession, catalog: str, namespace: str, incident_id: str):
     """Рассчитывает вентиляционные метрики на основе premise_parameters"""
     
-    print("\n💨 Calculating ventilation_metrics...")
+    print("\nCalculating ventilation_metrics...")
     
     # Читаем параметры выработок
     params_df = spark.table(f"{catalog}.{namespace}.premise_parameters") \
@@ -355,7 +363,7 @@ def calculate_ventilation_metrics(spark: SparkSession, catalog: str, namespace: 
     
     ventilation_metrics_df.writeTo(f"{catalog}.{namespace}.ventilation_metrics").append()
     
-    print(f"   ✅ Calculated 1 ventilation_metrics record")
+    print(f"   Calculated 1 ventilation_metrics record")
     print(f"      min_velocity: {min_velocity} m/s")
     print(f"      velocity_deficit: {velocity_deficit}%")
     print(f"      leakage_coefficient: {leakage_coefficient}")
@@ -378,10 +386,10 @@ def main():
     args = parser.parse_args()
     
     print("=" * 70)
-    print("📊 CALCULATING ALL METRICS")
-    print(f"📚 Catalog: {args.catalog}")
-    print(f"📁 Namespace: {args.namespace}")
-    print(f"🆔 Incident ID: {args.incident_id}")
+    print("CALCULATING ALL METRICS")
+    print(f"Catalog: {args.catalog}")
+    print(f"Namespace: {args.namespace}")
+    print(f"Incident ID: {args.incident_id}")
     print("=" * 70)
     
     # Создаём Spark сессию
@@ -396,7 +404,7 @@ def main():
     calculate_ventilation_metrics(spark, args.catalog, args.namespace, args.incident_id)
     
     print("\n" + "=" * 70)
-    print("✅ ALL METRICS CALCULATED SUCCESSFULLY!")
+    print("ALL METRICS CALCULATED SUCCESSFULLY")
     print("=" * 70)
     
     spark.stop()

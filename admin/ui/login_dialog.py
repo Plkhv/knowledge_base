@@ -1,5 +1,5 @@
 # ui/login_dialog.py
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QLineEdit, QPushButton, QMessageBox, QLabel
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QLineEdit, QPushButton, QMessageBox
 from PyQt6.QtCore import Qt
 
 class LoginDialog(QDialog):
@@ -8,7 +8,6 @@ class LoginDialog(QDialog):
         self.admin_service = admin_service
         self.user = None
         self.setup_ui()
-        print("LoginDialog: инициализация завершена")
     
     def setup_ui(self):
         self.setWindowTitle("Авторизация")
@@ -33,12 +32,6 @@ class LoginDialog(QDialog):
         self.login_btn = QPushButton("Войти")
         self.login_btn.clicked.connect(self.authenticate)
         layout.addWidget(self.login_btn)
-        
-        # Подсказка для первого входа
-        hint = QLabel("Подсказка: admin / admin123")
-        hint.setStyleSheet("color: gray; font-size: 10px;")
-        hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(hint)
     
     def authenticate(self):
         username = self.username_edit.text().strip()

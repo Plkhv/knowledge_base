@@ -80,7 +80,7 @@ def get_schema_from_json(file_path, spark):
 def load_table(spark, json_path, table_name):
     """Загружает таблицу в Iceberg (как в вашем ноутбуке)"""
     
-    print(f"  📄 {table_name}.json")
+    print(f"  {table_name}.json")
     
     # Определяем схему из JSON
     schema = get_schema_from_json(json_path, spark)
@@ -93,10 +93,10 @@ def load_table(spark, json_path, table_name):
     if count > 0:
         # Создаём таблицу и загружаем данные
         df.writeTo(f"iceberg.mine.{table_name}").createOrReplace()
-        print(f"     ✅ {count} записей загружено")
+        print(f"     {count} записей загружено")
         return count
     else:
-        print(f"     ⚠️ файл пуст")
+        print(f"     файл пуст")
         return 0
 
 
@@ -116,19 +116,19 @@ def main():
         'sensor_record', 'sensor_reestr', 'witness_statement'
     ]
     
-    print("\n📤 ЗАГРУЗКА ДАННЫХ В ICEBERG")
+    print("\nЗАГРУЗКА ДАННЫХ В ICEBERG")
     print("=" * 70)
     
     # Создаём Spark сессию
     spark = get_spark_session()
-    print("✅ SparkSession с Iceberg создана!")
+    print("SparkSession с Iceberg создана!")
     
     # Создаём namespace
     try:
         spark.sql("CREATE NAMESPACE IF NOT EXISTS iceberg.mine")
-        print("✅ Schema 'nessie.mine' created")
+        print("Schema 'nessie.mine' created")
     except Exception as e:
-        print(f"⚠️ Schema: {e}")
+        print(f"Schema: {e}")
     
     loaded = 0
     for table_name in tables_to_load:
@@ -139,11 +139,11 @@ def main():
                 if count > 0:
                     loaded += 1
             else:
-                print(f"  ⚠️ {table_name}.json не найден")
+                print(f"  {table_name}.json не найден")
         except Exception as e:
-            print(f"     ❌ Ошибка: {str(e)[:150]}")
+            print(f"     Ошибка: {str(e)[:150]}")
     
-    print(f"\n✅ Загружено {loaded} из {len(tables_to_load)} таблиц")
+    print(f"\nЗагружено {loaded} из {len(tables_to_load)} таблиц")
     
     spark.stop()
 
