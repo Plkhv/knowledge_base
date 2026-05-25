@@ -167,6 +167,7 @@ class EquipmentIssueParser(BaseParser):
             record = {
                 'issue_id': generate_issue_id(),
                 'incident_id': self.incident_id,
+                'equipment_id': None,
                 'equipment_name': equipment_name,
                 'equipment_type': equipment_type,
                 'inventory_number': inventory_number,
@@ -258,6 +259,7 @@ class EquipmentIssueParser(BaseParser):
             record = {
                 'issue_id': generate_issue_id(),
                 'incident_id': self.incident_id,
+                'equipment_id': None,
                 'equipment_name': equipment_name,
                 'equipment_type': equipment_type,
                 'inventory_number': None,

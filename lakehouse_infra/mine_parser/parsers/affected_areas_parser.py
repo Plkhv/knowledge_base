@@ -76,6 +76,7 @@ class AffectedAreasParser(BaseParser):
             'damage_description': f"очаг взрыва, концентрация CH4 {ch4_value}%",
             'is_primary_blast_zone': True,
             'geo_meta': f"секции {sections_match.group(1)}-{sections_match.group(2)}" if sections_match else None,
+                'length_m':               None,
             'source_file': file_name
         }
         records.append(primary_record)
@@ -101,6 +102,7 @@ class AffectedAreasParser(BaseParser):
                         'damage_description': f"зона поражения: {premise_name}",
                         'is_primary_blast_zone': False,
                         'geo_meta': None,
+                    'length_m': None,
                         'source_file': file_name
                     }
                     records.append(record)
@@ -179,6 +181,7 @@ class AffectedAreasParser(BaseParser):
                         'damage_description': sub_item.strip(),
                         'is_primary_blast_zone': ('секции 138-148' in sub_item or 'верхняя' in sub_item),
                         'geo_meta': self._extract_sections(sub_item),
+                    'length_m': None,
                         'source_file': file_name
                     }
                     records.append(record)
@@ -271,6 +274,7 @@ class AffectedAreasParser(BaseParser):
                         'damage_description': fact,
                         'is_primary_blast_zone': ('секции 138-148' in fact or 'секций 138-148' in fact),
                         'geo_meta': self._extract_sections(fact),
+                    'length_m': None,
                         'source_file': file_name
                     }
                     records.append(record)
@@ -319,6 +323,7 @@ class AffectedAreasParser(BaseParser):
                     'damage_description': 'выработка находится в зоне поражения',
                     'is_primary_blast_zone': False,
                     'geo_meta': None,
+                    'length_m': None,
                     'source_file': file_name
                 }
                 records.append(record)

@@ -121,6 +121,15 @@ class PremiseParser(BaseParser):
                 'length_m': None,
                 'cross_section_m2': None,
                 'company_id': self.COMPANY_ID,
+                'coal_density':          None,
+                'coal_production_coef':  None,
+                'conveyor_control_type': None,
+                'conveyor_speed':        None,
+                'daily_production':      None,
+                'pillar_length_m':       None,
+                'plast_development_type': None,
+                'rock_mass_density':     None,
+                'ventilation_scheme':    None,
                 'source_file': file_name
             }
             
@@ -192,6 +201,15 @@ class PremiseParser(BaseParser):
                 'length_m': length,
                 'cross_section_m2': section,
                 'company_id': self.COMPANY_ID,
+                'coal_density':          None,
+                'coal_production_coef':  None,
+                'conveyor_control_type': None,
+                'conveyor_speed':        None,
+                'daily_production':      None,
+                'pillar_length_m':       None,
+                'plast_development_type': None,
+                'rock_mass_density':     None,
+                'ventilation_scheme':    None,
                 'source_file': file_name
             }
             records.append(record)
@@ -217,6 +235,15 @@ class PremiseParser(BaseParser):
                 'length_m': length,
                 'cross_section_m2': section,
                 'company_id': self.COMPANY_ID,
+                'coal_density':          None,
+                'coal_production_coef':  None,
+                'conveyor_control_type': None,
+                'conveyor_speed':        None,
+                'daily_production':      None,
+                'pillar_length_m':       None,
+                'plast_development_type': None,
+                'rock_mass_density':     None,
+                'ventilation_scheme':    None,
                 'source_file': file_name
             }
             records.append(record)
@@ -242,6 +269,15 @@ class PremiseParser(BaseParser):
                 'length_m': length,
                 'cross_section_m2': section,
                 'company_id': self.COMPANY_ID,
+                'coal_density':          None,
+                'coal_production_coef':  None,
+                'conveyor_control_type': None,
+                'conveyor_speed':        None,
+                'daily_production':      None,
+                'pillar_length_m':       None,
+                'plast_development_type': None,
+                'rock_mass_density':     None,
+                'ventilation_scheme':    None,
                 'source_file': file_name
             }
             records.append(record)
@@ -263,6 +299,15 @@ class PremiseParser(BaseParser):
                 'length_m': length,
                 'cross_section_m2': section,
                 'company_id': self.COMPANY_ID,
+                'coal_density':          None,
+                'coal_production_coef':  None,
+                'conveyor_control_type': None,
+                'conveyor_speed':        None,
+                'daily_production':      None,
+                'pillar_length_m':       None,
+                'plast_development_type': None,
+                'rock_mass_density':     None,
+                'ventilation_scheme':    None,
                 'source_file': file_name
             }
             records.append(record)
@@ -319,6 +364,15 @@ class PremiseParser(BaseParser):
                 'length_m': None,
                 'cross_section_m2': None,
                 'company_id': self.COMPANY_ID,
+                'coal_density':          None,
+                'coal_production_coef':  None,
+                'conveyor_control_type': None,
+                'conveyor_speed':        None,
+                'daily_production':      None,
+                'pillar_length_m':       None,
+                'plast_development_type': None,
+                'rock_mass_density':     None,
+                'ventilation_scheme':    None,
                 'source_file': file_name
             }
             

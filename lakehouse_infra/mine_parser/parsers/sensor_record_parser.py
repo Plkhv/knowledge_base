@@ -161,6 +161,11 @@ class SensorRecordParser(BaseParser):
                 'data_quality_flag': 1,
                 'x_coordinate': None,
                 'y_coordinate': None,
+                'premise_id':     None,
+                'r1_co2_o2_ratio': None,
+                'r2_co_o2_ratio':  None,
+                'r3_co_co2_ratio': None,
+                'note':            None,
                 'source_file': file_name
             }
             records.append(record)

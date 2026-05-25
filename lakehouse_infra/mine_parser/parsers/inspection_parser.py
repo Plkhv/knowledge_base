@@ -99,6 +99,8 @@ class InspectionParser(BaseParser):
                     record = {
                         'fact_id': generate_inspection_fact_id(),
                         'incident_id': self.incident_id,
+                        'inspection_id': None,
+                        'expert_id': None,
                         'inspection_date': inspection_date,
                         'fact_description': fact,
                         'inspector_name': inspector_name,
@@ -175,6 +177,8 @@ class InspectionParser(BaseParser):
                     record = {
                         'fact_id': generate_inspection_fact_id(),
                         'incident_id': self.incident_id,
+                        'inspection_id': None,
+                        'expert_id': None,
                         'inspection_date': inspection_date,
                         'fact_description': fact,
                         'inspector_name': expert_name,

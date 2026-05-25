@@ -111,6 +111,7 @@ class PremiseParametersParser(BaseParser):
             record = {
                 'param_id': generate_premise_param_id(),
                 'incident_id': self.incident_id,
+                'premise_id':  None,
                 'location': location,
                 'measurement_date': DateParser.parse_to_str(measurement_date) if measurement_date else None,
                 'param_type': 'ventilation',
@@ -126,7 +127,7 @@ class PremiseParametersParser(BaseParser):
                 'distribution_coefficient': None,
                 'gas_flow_m3_min': None,
                 'ch4_flow_m3_min': None,
-                'vacuum_pressure_mmH2O': None,
+                'vacuum_pressure_mmh2o': None,
                 'degassing_efficiency_percent': None,
                 'inert_dust_applied_kg': None,
                 'noncombustible_content_percent': None,
@@ -211,6 +212,7 @@ class PremiseParametersParser(BaseParser):
             record = {
                 'param_id': generate_premise_param_id(),
                 'incident_id': self.incident_id,
+                'premise_id':  None,
                 'location': location,
                 'measurement_date': None,  # квартальный отчет без конкретной даты
                 'param_type': 'dust',
@@ -234,7 +236,7 @@ class PremiseParametersParser(BaseParser):
                 'distribution_coefficient': None,
                 'gas_flow_m3_min': None,
                 'ch4_flow_m3_min': None,
-                'vacuum_pressure_mmH2O': None,
+                'vacuum_pressure_mmh2o': None,
                 'degassing_efficiency_percent': None,
                 
                 'source_file': file_name
@@ -278,13 +280,14 @@ class PremiseParametersParser(BaseParser):
                             record = {
                                 'param_id': generate_premise_param_id(),
                                 'incident_id': self.incident_id,
+                'premise_id':  None,
                                 'location': 'Вакуум-насосная станция (Западный ствол)',
                                 'measurement_date': measurement_date,
                                 'param_type': 'degassing',
                                 'gas_flow_m3_min': gas_flow,
                                 'ch4_concentration_percent': ch4,
                                 'ch4_flow_m3_min': ch4_flow,
-                                'vacuum_pressure_mmH2O': pressure,
+                                'vacuum_pressure_mmh2o': pressure,
                                 'degassing_efficiency_percent': None,
                                 'inert_dust_applied_kg': None,
                                 'noncombustible_content_percent': None,
@@ -321,13 +324,14 @@ class PremiseParametersParser(BaseParser):
                         record = {
                             'param_id': generate_premise_param_id(),
                             'incident_id': self.incident_id,
+                'premise_id':  None,
                             'location': location,
                             'measurement_date': self._parse_date_from_content(content),
                             'param_type': 'degassing',
                             'gas_flow_m3_min': gas_flow,
                             'ch4_concentration_percent': ch4,
                             'ch4_flow_m3_min': ch4_flow,
-                            'vacuum_pressure_mmH2O': pressure,
+                            'vacuum_pressure_mmh2o': pressure,
                             'degassing_efficiency_percent': None,
                             'inert_dust_applied_kg': None,
                             'noncombustible_content_percent': None,
@@ -368,6 +372,7 @@ class PremiseParametersParser(BaseParser):
                 record = {
                     'param_id': generate_premise_param_id(),
                     'incident_id': self.incident_id,
+                'premise_id':  None,
                     'location': location,
                     'measurement_date': None,
                     'param_type': 'ventilation',
@@ -379,7 +384,7 @@ class PremiseParametersParser(BaseParser):
                     'distribution_coefficient': None,
                     'gas_flow_m3_min': None,
                     'ch4_flow_m3_min': None,
-                    'vacuum_pressure_mmH2O': None,
+                    'vacuum_pressure_mmh2o': None,
                     'degassing_efficiency_percent': None,
                     'inert_dust_applied_kg': None,
                     'noncombustible_content_percent': None,
