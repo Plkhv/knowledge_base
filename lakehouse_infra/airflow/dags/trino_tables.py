@@ -24,7 +24,13 @@ with DAG(
     @task
     def create_tables():
         """Создание таблиц в Trino из SQL файла"""
+        import re
         from trino.dbapi import connect
+
+        def is_executable(stmt: str) -> bool:
+            without_comments = re.sub(r'--[^\n]*', '', stmt)
+            without_comments = re.sub(r'/\*.*?\*/', '', without_comments, flags=re.DOTALL)
+            return bool(without_comments.strip())
 
         conn = connect(
             host='trino',
@@ -35,7 +41,6 @@ with DAG(
         )
 
         cursor = conn.cursor()
-
         sql_file_path = '/opt/airflow/mine_parser/create_tables.sql'
 
         logging.info(f"Reading SQL from {sql_file_path}")
@@ -43,8 +48,11 @@ with DAG(
         with open(sql_file_path, 'r') as f:
             sql = f.read()
 
-        # Разбиваем на отдельные команды
-        statements = [s.strip() for s in sql.split(';') if s.strip()]
+        statements = [
+            s.strip()
+            for s in sql.split(';')
+            if s.strip() and is_executable(s)
+        ]
 
         logging.info(f"Found {len(statements)} SQL statements")
 
@@ -56,7 +64,6 @@ with DAG(
                 executed += 1
                 logging.info(f"✅ Executed: {stmt[:80]}...")
             except Exception as e:
-                # Игнорируем "already exists"
                 if "already exists" in str(e).lower():
                     logging.warning(f"⚠️ Skipped (exists): {stmt[:80]}...")
                 else:

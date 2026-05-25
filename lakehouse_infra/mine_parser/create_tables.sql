@@ -6,7 +6,8 @@
 -- 1. Создаём схему (namespace) 
 CREATE SCHEMA IF NOT EXISTS iceberg.mine;
 
--- USE iceberg.mine; -- убрано: не поддерживается в Trino через JDBC
+-- 2. Устанавливаем схему по умолчанию
+USE iceberg.mine;
 
 -- ============================================
 -- 3. Создание всех таблиц
@@ -47,14 +48,13 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.air_analysis (
     is_oxidation BOOLEAN,             -- R1 < 2.5
     conclusion VARCHAR,
     source_file VARCHAR
-    -- _notice_num убран: внутреннее поле парсера, не должно быть в схеме
 ) WITH (format = 'PARQUET', partitioning = ARRAY['incident_id']);
 
 -- chronology_incident - хронология
 CREATE TABLE IF NOT EXISTS iceberg.mine.chronology_incident (
     event_id VARCHAR,
     incident_id VARCHAR,
-    event_dttm VARCHAR,
+    event_dttm TIMESTAMP,
     event_type VARCHAR,
     action_description VARCHAR,
     temperature_c DOUBLE,
@@ -134,6 +134,7 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.equipment_certificate (
 CREATE TABLE IF NOT EXISTS iceberg.mine.equipment_issue_log (
     issue_id VARCHAR,
     incident_id VARCHAR,
+    equipment_id VARCHAR,
     equipment_name VARCHAR,
     equipment_type VARCHAR,
     inventory_number VARCHAR,
@@ -156,14 +157,13 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.equipment_issue_log (
 CREATE TABLE IF NOT EXISTS iceberg.mine.equipment_maintenance (
     maintenance_id VARCHAR,
     equipment_id VARCHAR,
-    maintenance_date VARCHAR,
+    maintenance_date TIMESTAMP,
     shift VARCHAR,
     operation_type VARCHAR,
     performed_by VARCHAR,
     anomaly_notes VARCHAR,
     is_completed BOOLEAN,
     source_file VARCHAR
-    -- _equipment_model убран: внутреннее поле парсера
 ) WITH (format = 'PARQUET');
 
 -- expert_dictionary - словарь экспертов
@@ -214,7 +214,7 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.hypotesis_prove_facts (
     fact_id VARCHAR,
     hypotesis_id VARCHAR,
     source_name VARCHAR,
-    is_prove BOOLEAN,  -- исправлено INTEGER → BOOLEAN
+    is_prove BOOLEAN, 
     fact_text VARCHAR,
     match_type VARCHAR,
     keyword VARCHAR,
@@ -230,14 +230,10 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.incident_description (
     incident_type VARCHAR,
     fatalities INTEGER,
     injuries INTEGER,
-    material_damage VARCHAR,
+    material_damage DOUBLE,
     brief_description VARCHAR,
     extracted_locations VARCHAR,
     extracted_entities VARCHAR,
-    -- добавлены: нужны для расчёта incident_metrics в DAG
-    blast_pressure_mpa DOUBLE,
-    blast_wave_speed_mps DOUBLE,
-    economic_damage DOUBLE,
     source_file VARCHAR
 ) WITH (format = 'PARQUET', partitioning = ARRAY['incident_id']);
 
@@ -245,7 +241,9 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.incident_description (
 CREATE TABLE IF NOT EXISTS iceberg.mine.inspection_description (
     fact_id VARCHAR,
     incident_id VARCHAR,
-    inspection_date VARCHAR,
+    inspection_id VARCHAR,
+    expert_id VARCHAR,
+    inspection_date TIMESTAMP,
     fact_description VARCHAR,
     inspector_name VARCHAR,
     location VARCHAR,
@@ -266,6 +264,15 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.premise (
     length_m DOUBLE,
     cross_section_m2 DOUBLE,
     company_id VARCHAR,
+    pillar_length_m DOUBLE,
+    plast_development_type VARCHAR,
+    coal_production_coef DOUBLE,
+    daily_production DOUBLE,
+    conveyor_control_type VARCHAR,
+    ventilation_scheme VARCHAR,
+    conveyor_speed DOUBLE,
+    rock_mass_density DOUBLE,
+    coal_density DOUBLE,
     source_file VARCHAR
 ) WITH (format = 'PARQUET');
 
@@ -273,8 +280,9 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.premise (
 CREATE TABLE IF NOT EXISTS iceberg.mine.premise_parameters (
     param_id VARCHAR,
     incident_id VARCHAR,
+    premise_id VARCHAR,
     location VARCHAR,
-    measurement_date VARCHAR,
+    measurement_date TIMESTAMP,
     param_type VARCHAR,
     inert_dust_applied_kg DOUBLE,
     noncombustible_content_percent DOUBLE,
@@ -312,7 +320,7 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.regulatory_document (
 -- seismic_event - сейсмика
 CREATE TABLE IF NOT EXISTS iceberg.mine.seismic_event (
     event_id VARCHAR,
-    event_dttm VARCHAR,
+    event_dttm TIMESTAMP,
     latitude DOUBLE,
     longitude DOUBLE,
     depth_km DOUBLE,
@@ -329,13 +337,18 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.sensor_record (
     incident_id VARCHAR,
     sensor_id VARCHAR,
     sensor_type VARCHAR,
-    record_dttm VARCHAR,
+    record_dttm TIMESTAMP,
     value DOUBLE,
     unit VARCHAR,
     is_critical BOOLEAN,    
     data_quality_flag INTEGER,  -- код качества (0=ok,1=warn,2=err) 
     x_coordinate DOUBLE,
     y_coordinate DOUBLE,
+    premise_id VARCHAR,
+    r1_co2_o2_ratio DOUBLE,
+    r2_co_o2_ratio DOUBLE,
+    r3_co_co2_ratio DOUBLE,
+    note VARCHAR,
     source_file VARCHAR
 ) WITH (format = 'PARQUET', partitioning = ARRAY['incident_id']);
 
@@ -358,7 +371,7 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.witness_statement (
     statement_id VARCHAR,
     incident_id VARCHAR,
     witness_name VARCHAR,
-    statement_datetime VARCHAR,
+    statement_datetime TIMESTAMP,
     testimony_text VARCHAR,
     source_file VARCHAR,
     extracted_persons VARCHAR,
@@ -376,7 +389,7 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.witness_statement (
 CREATE TABLE IF NOT EXISTS iceberg.mine.expert_conclusion (
     conclusion_id VARCHAR,
     incident_id VARCHAR,
-    conclusion_date VARCHAR,
+    conclusion_dttm TIMESTAMP,
     expert_id VARCHAR,
     fire_origin_location VARCHAR,
     blast_epicenter_location VARCHAR,
@@ -405,6 +418,8 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.hypotesis (
 CREATE TABLE IF NOT EXISTS iceberg.mine.recommended_actions (
     measure_id VARCHAR,
     conclusion_id VARCHAR,
+    event_id VARCHAR,
+    event_type VARCHAR,
     measure_type VARCHAR,
     description VARCHAR,
     responsible_party VARCHAR,
@@ -417,7 +432,7 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.recommended_actions (
 CREATE TABLE IF NOT EXISTS iceberg.mine.fire_metrics (
     metric_id VARCHAR,
     incident_id VARCHAR,
-    r1_o2_co2_ratio DOUBLE,       -- R1 = ΔO₂/ΔCO₂ (исправлено: было r1_co2_o2_ratio)
+    r1_o2_co2_ratio DOUBLE,       -- R1 = ΔO₂/ΔCO₂
     r2_co_o2_ratio DOUBLE,
     r3_co_co2_ratio DOUBLE,
     delta_o2 DOUBLE,
@@ -436,8 +451,9 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.fire_metrics (
 CREATE TABLE IF NOT EXISTS iceberg.mine.ventilation_metrics (
     metric_id VARCHAR,
     incident_id VARCHAR,
-    premise_id VARCHAR,                 -- добавлено: локация замера
-    measurement_dttm VARCHAR,           -- добавлено: дата замера
+    premise_id VARCHAR,
+    measurement_dttm TIMESTAMP,
+    measure_dttm TIMESTAMP,
     air_velocity_fact_mps DOUBLE,       -- ν_fact (факт)
     air_velocity_min_mps DOUBLE,
     air_velocity_norm_mps DOUBLE,       -- ν_norm (норматив)
@@ -448,7 +464,7 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.ventilation_metrics (
     airflow_lava_m3min DOUBLE,          -- Q_lava
     leakage_coefficient DOUBLE,         -- k_leak = (Q_out−Q_in)/Q_in
     distribution_coefficient DOUBLE,    -- K_distr = Q_lava/Q_total
-    is_ventilation_valid BOOLEAN,
+    is_ventilation_valid BOOLEAN,    
     calculation_date TIMESTAMP,
     source_file VARCHAR
 ) WITH (format = 'PARQUET', partitioning = ARRAY['incident_id']);
@@ -466,35 +482,11 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.incident_metrics (
     affected_areas_count INTEGER,
     destroyed_structures_count INTEGER,
     economic_damage DOUBLE,
-    is_seismic_event BOOLEAN,    
+    is_seismic_event BOOLEAN,
+    measure_dttm TIMESTAMP,
     calculation_date TIMESTAMP,
     source_file VARCHAR
 ) WITH (format = 'PARQUET', partitioning = ARRAY['incident_id']);
-
--- incident_metrics_summary — сводная таблица S(uᵢ) (заполняется Spark)
-CREATE TABLE IF NOT EXISTS iceberg.mine.incident_metrics_summary (
-    incident_id VARCHAR,
-    -- M_inc
-    total_victims INTEGER,
-    fatalities INTEGER,
-    injuries INTEGER,
-    affected_area_length_m DOUBLE,
-    affected_areas_count INTEGER,
-    blast_pressure_mpa DOUBLE,
-    blast_wave_speed_mps DOUBLE,
-    is_seismic_event BOOLEAN,
-    -- M_vent (агрегаты по инциденту)
-    avg_delta_v_pct DOUBLE,
-    avg_k_leak DOUBLE,
-    avg_k_distr DOUBLE,
-    ventilation_compliant BOOLEAN,
-    -- M_fire (агрегаты по инциденту)
-    min_r1 DOUBLE,
-    max_r2 DOUBLE,
-    oxidation_detected BOOLEAN,
-    oxidation_sample_count BIGINT,
-    calculated_at TIMESTAMP
-) WITH (format = 'PARQUET');
 
 -- degassing_metrics — показатели дегазации (заполняются Spark)
 CREATE TABLE IF NOT EXISTS iceberg.mine.degassing_metrics (
@@ -526,8 +518,70 @@ CREATE TABLE IF NOT EXISTS iceberg.mine.dust_metrics (
     source_file VARCHAR
 ) WITH (format = 'PARQUET', partitioning = ARRAY['incident_id']);
 
+
 -- ============================================
--- 5. Проверка создания таблиц
+-- 6. Таблицы добавлены из модели данных
 -- ============================================
 
--- SHOW TABLES FROM iceberg.mine; -- убрано: выполняется отдельно через show_tables()
+-- audio_record - записи аудио-протоколов
+CREATE TABLE IF NOT EXISTS iceberg.mine.audio_record (
+    incident_id VARCHAR,
+    protocol_id VARCHAR,
+    name VARCHAR,
+    description VARCHAR,
+    transcription VARCHAR,
+    link VARCHAR,
+    source_file VARCHAR
+) WITH (format = 'PARQUET', partitioning = ARRAY['incident_id']);
+
+-- experiment_protocol - протоколы экспериментов
+CREATE TABLE IF NOT EXISTS iceberg.mine.experiment_protocol (
+    experiment_id VARCHAR,
+    incident_id VARCHAR,
+    experiment_type VARCHAR,
+    experiment_date TIMESTAMP,
+    material_tested VARCHAR,
+    methodology VARCHAR,
+    result_description VARCHAR,
+    max_temperature_c DOUBLE,
+    spark_present BOOLEAN,
+    conclusion VARCHAR,
+    source_file VARCHAR
+) WITH (format = 'PARQUET', partitioning = ARRAY['incident_id']);
+
+-- graphic_reestr - реестр графических материалов
+CREATE TABLE IF NOT EXISTS iceberg.mine.graphic_reestr (
+    incident_id VARCHAR,
+    material_id VARCHAR,
+    name VARCHAR,
+    description VARCHAR,
+    link VARCHAR,
+    inspection_id VARCHAR,
+    source_file VARCHAR
+) WITH (format = 'PARQUET', partitioning = ARRAY['incident_id']);
+
+-- causal_relationships - причинно-следственные связи
+CREATE TABLE IF NOT EXISTS iceberg.mine.causal_relationships (
+    chain_id VARCHAR,
+    incident_id VARCHAR,
+    chain_version INTEGER,
+    step_order INTEGER,
+    event_id VARCHAR,
+    event_type VARCHAR,
+    event_description VARCHAR,
+    source_table VARCHAR,
+    source_record_id VARCHAR,
+    causal_relationship VARCHAR,
+    confidence_score DOUBLE,
+    created_by VARCHAR,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    is_validated BOOLEAN,
+    validation_notes VARCHAR
+) WITH (format = 'PARQUET', partitioning = ARRAY['incident_id']);
+
+-- ============================================
+-- 7. Проверка создания таблиц
+-- ============================================
+
+-- SHOW TABLES FROM iceberg.mine; -- выполняется отдельно через show_tables()

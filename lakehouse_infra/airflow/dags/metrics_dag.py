@@ -453,7 +453,7 @@ default_args = {
 }
 
 with DAG(
-    "new_metrics_calculator",
+    "metrics_calculator",
     default_args=default_args,
     description="Расчёт M_inc/M_vent/M_fire через Trino SQL → Iceberg (без Spark)",
     schedule_interval=None,

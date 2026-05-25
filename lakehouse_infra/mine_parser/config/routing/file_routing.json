@@ -2,6 +2,30 @@
   "routing_rules": [
     {
       "name_patterns": [
+        "*.dwg",
+        "*.jpg",
+        "*.jpeg",
+        "*.png",
+        "*.pdf",
+        "*.tif",
+        "*.tiff",
+        "*.bmp",
+        "*.svg",
+        "*схема*",
+        "*план*",
+        "*чертеж*",
+        "*чертёж*",
+        "*фото*",
+        "*photo*",
+        "*scan*",
+        "*скан*"
+      ],
+      "parser_type": "graphic_reestr",
+      "output_table": "graphic_reestr",
+      "priority": 90
+    },
+    {
+      "name_patterns": [
         "*combine*.txt",
         "*комбайн*.txt",
         "*conveyor*.txt",
@@ -27,7 +51,7 @@
         "*certificate*.txt",
         "*сертификат*.txt",
         "*protocol*.txt",
-        "*протокол испытаний*.txt",
+        "*протокол*.txt",
         "*cert*.txt",
         "*register*.txt",
         "*реестр*.txt"
@@ -93,7 +117,8 @@
       "name_patterns": [
         "*gas_measurements*.txt",
         "*замеры*.txt",
-        "*отвод газа*.txt"
+        "*отвод газа*.txt",
+        "*газоносност*.txt"
       ],
       "parser_type": "gas_analysis",
       "output_table": "gas_analysis",
@@ -136,6 +161,7 @@
         "*выдач*.txt",
         "*наряд*.txt",
         "*equipment_issue*.txt",
+        "*safety*.txt",
         "*work_order*.txt",
         "*tool*.txt"
       ],
@@ -262,10 +288,7 @@
         "*аудио*.txt",
         "*звонок*.txt",
         "*audio*.txt",
-        "*timeline*.txt",
-        "*call*.txt",
-        "*разговор*.txt",
-        "*communication*.txt"
+        "*timeline*.txt"
       ],
       "parser_type": "chronology",
       "output_table": "chronology_incident",
@@ -276,7 +299,7 @@
         "*witness*.txt",
         "*опрос*.txt",
         "*показан*.txt",
-        "*протокол опроса*.txt",
+        "*протокол*.txt",
         "*interview*.txt"
       ],
       "parser_type": "witness",
@@ -307,6 +330,17 @@
       ],
       "parser_type": "expert",
       "output_table": "expert_dictionary",
+      "priority": 10
+    },
+    {
+      "name_patterns": [
+        "*communication*.txt",
+        "*звонок*.txt",
+        "*разговор*.txt",
+        "*call*.txt"
+      ],
+      "parser_type": "communication",
+      "output_table": "communication_record",
       "priority": 10
     }
   ]
