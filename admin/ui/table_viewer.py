@@ -224,6 +224,18 @@ class TableViewerWidget(QWidget):
                 return str(value).strip()
         return ""
 
+    @staticmethod
+    def _format_snapshot_time(value) -> str:
+        text = str(value or "").strip()
+        if not text:
+            return ""
+        text = text.replace("T", " ")
+        if "+" in text:
+            text = text.split("+")[0]
+        if "." in text:
+            text = text.split(".")[0]
+        return text
+
     def _build_download_url(self, source_path: str) -> str | None:
         return self.admin_service.lakehouse.get_presigned_download_url(source_path, download=True)
 
@@ -332,55 +344,74 @@ class TableViewerWidget(QWidget):
             QMessageBox.warning(self, "Недостаточно прав", "Откат доступен только администратору")
             return
 
-        points = self.admin_service.get_table_change_points(self.table_name, limit=30)
-        if not points:
-            QMessageBox.information(self, "Откат", "Нет точек сохранения для отката (попробуйте сначала внести изменения и нажать 'Сохранить')")
-            return
+        latest_snapshot = self.admin_service.lakehouse.get_latest_snapshot_id(self.table_name)
+        previous_snapshot = self.admin_service.lakehouse.get_previous_snapshot_id(self.table_name)
+        snapshots = self.admin_service.lakehouse.list_snapshots(self.table_name, limit=30)
 
-        by_id = {int(p.id): p for p in points}
-        items = []
-        for p in points:
-            ts = str(getattr(p, "executed_at", ""))
-            user = getattr(p, "username", None) or "?"
-            action = getattr(p, "action", None) or "CHANGE"
-            snap_after = getattr(p, "snapshot_after", None)
-            snap_before = getattr(p, "snapshot_before", None)
-            details = (getattr(p, "details", None) or "").replace("\n", " ").strip()
-            if len(details) > 120:
-                details = details[:117] + "..."
-            items.append(
-                f"{p.id} | {ts} | {user} | {action} | after={snap_after} before={snap_before} | {details}"
+        if previous_snapshot is not None:
+            snapshot_id = int(previous_snapshot)
+            snapshot_labels = {int(sid): str(committed_at) for sid, committed_at, _ in snapshots}
+            latest_label = self._format_snapshot_time(snapshot_labels.get(int(latest_snapshot), latest_snapshot))
+            target_label = self._format_snapshot_time(snapshot_labels.get(snapshot_id, snapshot_id))
+            message_text = (
+                f"Откатить таблицу {self.table_name} к предыдущей версии?\n\n"
+                f"Текущая версия: {latest_label}\n"
+                f"Вернуться к версии: {target_label}"
             )
-        selected, ok = QInputDialog.getItem(
-            self,
-            "Откат таблицы",
-            "Выберите точку сохранения:",
-            items,
-            0,
-            False,
-        )
-        if not ok or not selected:
-            return
+        else:
+            points = self.admin_service.get_table_change_points(self.table_name, limit=30)
+            if not points:
+                QMessageBox.information(
+                    self,
+                    "Откат",
+                    "Нет доступной предыдущей версии для отката. Сначала сохраните хотя бы одно изменение.",
+                )
+                return
 
-        point_id = int(str(selected).split("|")[0].strip())
-        point = by_id.get(point_id)
-        if point is None:
-            QMessageBox.critical(self, "Ошибка", "Не удалось определить snapshot для выбранной точки")
-            return
+            by_id = {int(p.id): p for p in points}
+            items = []
+            for p in points:
+                ts = str(getattr(p, "executed_at", ""))
+                user = getattr(p, "username", None) or "?"
+                action = getattr(p, "action", None) or "CHANGE"
+                snap_after = getattr(p, "snapshot_after", None)
+                snap_before = getattr(p, "snapshot_before", None)
+                details = (getattr(p, "details", None) or "").replace("\n", " ").strip()
+                if len(details) > 120:
+                    details = details[:117] + "..."
+                items.append(f"{p.id} | {ts} | {user} | {action} | {details}")
+            selected, ok = QInputDialog.getItem(
+                self,
+                "Откат таблицы",
+                "Выберите точку сохранения:",
+                items,
+                0,
+                False,
+            )
+            if not ok or not selected:
+                return
 
-        snapshot_id_raw = getattr(point, "snapshot_after", None)
-        if snapshot_id_raw is None:
-            snapshot_id_raw = getattr(point, "snapshot_before", None)
-        if snapshot_id_raw is None:
-            QMessageBox.critical(self, "Ошибка", "Для выбранной точки отсутствует snapshot_id")
-            return
+            point_id = int(str(selected).split("|")[0].strip())
+            point = by_id.get(point_id)
+            if point is None:
+                QMessageBox.critical(self, "Ошибка", "Не удалось определить snapshot для выбранной точки")
+                return
 
-        snapshot_id = int(snapshot_id_raw)
+            snapshot_id_raw = getattr(point, "snapshot_after", None)
+            if snapshot_id_raw is None:
+                snapshot_id_raw = getattr(point, "snapshot_before", None)
+            if snapshot_id_raw is None:
+                QMessageBox.critical(self, "Ошибка", "Для выбранной точки отсутствует snapshot_id")
+                return
+
+            snapshot_id = int(snapshot_id_raw)
+            snapshot_label = self._format_snapshot_time(getattr(point, "executed_at", None) or snapshot_id)
+            message_text = f"Откатить таблицу {self.table_name} к версии от {snapshot_label}?"
 
         reply = QMessageBox.question(
             self,
             "Подтверждение",
-            f"Откатить таблицу {self.table_name} к точке #{point_id} (snapshot {snapshot_id})?",
+            message_text,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
         if reply != QMessageBox.StandardButton.Yes:

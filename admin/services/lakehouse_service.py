@@ -76,6 +76,13 @@ class LakehouseService:
             return None
         return snaps[0][0]
 
+    def get_previous_snapshot_id(self, table_name: str) -> int | None:
+        """Return the snapshot immediately before the latest one, if available."""
+        snaps = self.list_snapshots(table_name, limit=2)
+        if len(snaps) < 2:
+            return None
+        return snaps[1][0]
+
     def rollback_to_snapshot(self, table_name: str, snapshot_id: int) -> None:
         """Rollback an Iceberg table to a given snapshot id via Trino procedure."""
         schema, base = self._split_table_name(table_name)
