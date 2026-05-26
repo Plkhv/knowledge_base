@@ -3,6 +3,8 @@ from trino.dbapi import connect
 from config import Config
 import logging
 import re
+from datetime import timedelta
+from urllib.parse import quote
 
 logger = logging.getLogger(__name__)
 
@@ -133,3 +135,88 @@ class LakehouseService:
         except Exception as e:
             logger.error(f"Error executing statement: {e}")
             raise
+
+    @staticmethod
+    def _parse_storage_path(storage_path: str) -> tuple[str, str] | None:
+        raw = str(storage_path or "").strip()
+        if not raw:
+            return None
+
+        if raw.startswith(("http://", "https://")):
+            return None
+
+        for prefix in ("s3a://", "s3://"):
+            if raw.startswith(prefix):
+                tail = raw[len(prefix):]
+                parts = tail.split("/", 1)
+                if len(parts) != 2 or not parts[0] or not parts[1]:
+                    return None
+                return parts[0], parts[1]
+
+        return None
+
+    def build_object_url(self, storage_path: str) -> str | None:
+        """Build direct object URL for a MinIO path like s3a://bucket/key."""
+        raw = str(storage_path or "").strip()
+        if not raw:
+            return None
+        if raw.startswith(("http://", "https://")):
+            return raw
+
+        parsed = self._parse_storage_path(raw)
+        if not parsed:
+            return None
+
+        bucket, key = parsed
+        base = str(Config.MINIO_PUBLIC_URL or Config.MINIO_ENDPOINT).rstrip("/")
+        return f"{base}/{quote(bucket)}/{quote(key, safe='/')}"
+
+    def get_presigned_download_url(
+        self,
+        storage_path: str,
+        expires_seconds: int | None = None,
+        download: bool = False,
+    ) -> str | None:
+        """Return presigned URL for MinIO object. Falls back to direct URL when signing is unavailable."""
+        raw = str(storage_path or "").strip()
+        if not raw:
+            return None
+        if raw.startswith(("http://", "https://")):
+            return raw
+
+        parsed = self._parse_storage_path(raw)
+        if not parsed:
+            return None
+
+        bucket, key = parsed
+        ttl = int(expires_seconds or Config.MINIO_PRESIGN_TTL_SECONDS)
+
+        try:
+            from minio import Minio
+            from pathlib import Path
+
+            endpoint = str(Config.MINIO_ENDPOINT or "http://localhost:9000").strip()
+            secure = endpoint.startswith("https://")
+            endpoint_no_scheme = endpoint.replace("http://", "").replace("https://", "")
+
+            response_headers = None
+            if download:
+                response_headers = {
+                    "response-content-disposition": f'attachment; filename="{Path(key).name}"'
+                }
+
+            client = Minio(
+                endpoint_no_scheme,
+                access_key=Config.MINIO_ACCESS_KEY,
+                secret_key=Config.MINIO_SECRET_KEY,
+                secure=secure,
+            )
+            return client.presigned_get_object(
+                bucket,
+                key,
+                expires=timedelta(seconds=max(60, ttl)),
+                response_headers=response_headers,
+            )
+        except Exception as e:
+            logger.warning("Could not generate presigned URL for %s: %s", raw, e)
+            return self.build_object_url(raw)

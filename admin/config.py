@@ -51,6 +51,13 @@ class Config:
     TRINO_USER = _env("TRINO_USER", "admin")
     
     TRINO_URL = f"http://{TRINO_HOST}:{TRINO_PORT}"
+
+    # MinIO (для ссылок/предпросмотра медиа)
+    MINIO_ENDPOINT = _env("MINIO_ENDPOINT", "http://localhost:9000")
+    MINIO_PUBLIC_URL = _env("MINIO_PUBLIC_URL", MINIO_ENDPOINT)
+    MINIO_ACCESS_KEY = _env("MINIO_ACCESS_KEY") or _env("MINIO_ROOT_USER", "admin")
+    MINIO_SECRET_KEY = _env("MINIO_SECRET_KEY") or _env("MINIO_ROOT_PASSWORD", "password")
+    MINIO_PRESIGN_TTL_SECONDS = int(_env("MINIO_PRESIGN_TTL_SECONDS", "3600"))
     
     # Приложение
     APP_NAME = "Lakehouse Admin Panel"

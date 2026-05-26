@@ -11,11 +11,77 @@ from PyQt6.QtWidgets import (
     QHeaderView,
     QMessageBox,
     QInputDialog,
+    QDialog,
+    QScrollArea,
+    QFileDialog,
 )
-from PyQt6.QtCore import QThread, pyqtSignal
+from PyQt6.QtCore import QThread, pyqtSignal, Qt, QUrl
+from PyQt6.QtGui import QDesktopServices, QPixmap, QFont
 import pandas as pd
 import time
+from pathlib import Path
+from urllib.request import urlopen
 from db.models import UserRole
+
+
+class ImagePreviewDialog(QDialog):
+    def __init__(self, pixmap: QPixmap, title: str, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self.resize(1000, 700)
+        self._base_pixmap = pixmap
+        self._zoom = 1.0
+
+        layout = QVBoxLayout(self)
+
+        controls = QHBoxLayout()
+        zoom_out_btn = QPushButton("-")
+        zoom_out_btn.clicked.connect(self.zoom_out)
+        controls.addWidget(zoom_out_btn)
+
+        zoom_in_btn = QPushButton("+")
+        zoom_in_btn.clicked.connect(self.zoom_in)
+        controls.addWidget(zoom_in_btn)
+
+        fit_btn = QPushButton("Сброс масштаба")
+        fit_btn.clicked.connect(self.reset_zoom)
+        controls.addWidget(fit_btn)
+        controls.addStretch()
+        layout.addLayout(controls)
+
+        self.scroll = QScrollArea()
+        self.scroll.setWidgetResizable(True)
+        self.image_label = QLabel()
+        self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.scroll.setWidget(self.image_label)
+        layout.addWidget(self.scroll)
+
+        self.apply_zoom()
+
+    def apply_zoom(self):
+        if self._base_pixmap.isNull():
+            return
+        w = max(1, int(self._base_pixmap.width() * self._zoom))
+        h = max(1, int(self._base_pixmap.height() * self._zoom))
+        scaled = self._base_pixmap.scaled(
+            w,
+            h,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        self.image_label.setPixmap(scaled)
+
+    def zoom_in(self):
+        self._zoom = min(5.0, self._zoom * 1.25)
+        self.apply_zoom()
+
+    def zoom_out(self):
+        self._zoom = max(0.2, self._zoom / 1.25)
+        self.apply_zoom()
+
+    def reset_zoom(self):
+        self._zoom = 1.0
+        self.apply_zoom()
 
 class LoadTableThread(QThread):
     finished = pyqtSignal(pd.DataFrame, int)
@@ -45,6 +111,14 @@ class LoadTableThread(QThread):
 
 class TableViewerWidget(QWidget):
     data_modified = pyqtSignal()
+
+    MEDIA_COLUMNS = {
+        "graphic_reestr": {"link", "source_file"},
+        "audio_record": {"link", "source_file"},
+    }
+    DOWNLOAD_COLUMN_KEY = "__download__"
+    IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".tif", ".tiff", ".svg"}
+    AUDIO_EXTENSIONS = {".mp3", ".wav", ".ogg", ".flac", ".aac", ".m4a"}
     
     def __init__(self, table_name: str, admin_service, current_user, parent=None):
         super().__init__(parent)
@@ -55,6 +129,7 @@ class TableViewerWidget(QWidget):
         self._original_df = None
         self._pending_updates: dict[int, dict[str, str]] = {}
         self.columns = []
+        self.display_columns = []
         self.primary_key = None
         self.can_write = admin_service.can_write(current_user.role)
         self.setup_ui()
@@ -70,12 +145,12 @@ class TableViewerWidget(QWidget):
         self.refresh_btn.clicked.connect(self.load_data)
         toolbar.addWidget(self.refresh_btn)
         
-        self.add_btn = QPushButton("Add record")
+        self.add_btn = QPushButton("Добавить запись")
         self.add_btn.clicked.connect(self.add_record)
         self.add_btn.setEnabled(self.can_write)  # Только если есть права на запись
         toolbar.addWidget(self.add_btn)
         
-        self.delete_btn = QPushButton("Delete record")
+        self.delete_btn = QPushButton("Удалить запись")
         self.delete_btn.clicked.connect(self.delete_record)
         self.delete_btn.setEnabled(self.can_write)  # Только если есть права на запись
         toolbar.addWidget(self.delete_btn)
@@ -87,13 +162,13 @@ class TableViewerWidget(QWidget):
         self.limit_spin.valueChanged.connect(self.load_data)
         toolbar.addWidget(self.limit_spin)
         
-        self.save_btn = QPushButton("Save changes")
+        self.save_btn = QPushButton("Сохранить изменения")
         self.save_btn.clicked.connect(self.save_changes)
         self.save_btn.setEnabled(False)
         self.save_btn.setVisible(self.can_write)  # Только если есть права на запись
         toolbar.addWidget(self.save_btn)
 
-        self.rollback_btn = QPushButton("Rollback")
+        self.rollback_btn = QPushButton("Вернуть изменения")
         self.rollback_btn.clicked.connect(self.rollback_changes)
         self.rollback_btn.setVisible(getattr(self.current_user, "role", None) == UserRole.ADMIN)
         toolbar.addWidget(self.rollback_btn)
@@ -114,7 +189,143 @@ class TableViewerWidget(QWidget):
             self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         
         self.table.itemChanged.connect(self.on_item_changed)
+        self.table.cellClicked.connect(self.on_cell_double_clicked)
         layout.addWidget(self.table)
+
+    @staticmethod
+    def _guess_media_type(path: str) -> str | None:
+        raw = str(path or "").strip().lower()
+        if not raw:
+            return None
+        dot_idx = raw.rfind(".")
+        ext = raw[dot_idx:] if dot_idx != -1 else ""
+        if ext in TableViewerWidget.IMAGE_EXTENSIONS:
+            return "image"
+        if ext in TableViewerWidget.AUDIO_EXTENSIONS:
+            return "audio"
+        return None
+
+    def _is_media_cell(self, table_name: str, column_name: str, value: str) -> bool:
+        table = str(table_name or "").lower()
+        col = str(column_name or "").lower()
+        raw = str(value or "").strip()
+        if not raw:
+            return False
+        if table not in self.MEDIA_COLUMNS:
+            return False
+        if col not in self.MEDIA_COLUMNS[table]:
+            return False
+        return raw.startswith(("s3a://", "s3://", "http://", "https://"))
+
+    def _get_media_source_path(self, row: pd.Series) -> str:
+        for key in ("source_file", "link"):
+            value = row.get(key)
+            if value is not None and str(value).strip():
+                return str(value).strip()
+        return ""
+
+    def _build_download_url(self, source_path: str) -> str | None:
+        return self.admin_service.lakehouse.get_presigned_download_url(source_path, download=True)
+
+    def _build_preview_url(self, source_path: str) -> str | None:
+        return self.admin_service.lakehouse.get_presigned_download_url(source_path, download=False)
+
+    @staticmethod
+    def _make_link_item(text: str) -> QTableWidgetItem:
+        item = QTableWidgetItem(text)
+        font = QFont(item.font())
+        font.setUnderline(True)
+        item.setFont(font)
+        item.setForeground(Qt.GlobalColor.blue)
+        item.setToolTip("Двойной клик: открыть файл")
+        return item
+
+    def on_cell_double_clicked(self, row: int, column: int):
+        if row < 0 or column < 0 or self.df is None:
+            return
+        if column >= len(self.display_columns):
+            return
+
+        col_name = self.display_columns[column]
+        if col_name == self.DOWNLOAD_COLUMN_KEY:
+            self.download_media(row)
+            return
+
+        try:
+            value = self.df.iloc[row][col_name]
+        except Exception:
+            return
+
+        raw = "" if value is None else str(value).strip()
+        if not self._is_media_cell(self.table_name, col_name, raw):
+            return
+
+        media_type = self._guess_media_type(raw)
+        url = self._build_preview_url(raw)
+        if not url:
+            QMessageBox.warning(self, "Медиа", "Не удалось сформировать ссылку на файл")
+            return
+
+        if media_type == "image":
+            self.show_image_preview(url, raw)
+            return
+
+        if media_type == "audio":
+            QDesktopServices.openUrl(QUrl(url))
+            self.status_label.setText("Открыта ссылка на аудио")
+            return
+
+        QDesktopServices.openUrl(QUrl(url))
+        self.status_label.setText("Открыта ссылка на файл")
+
+    def download_media(self, row: int):
+        if self.df is None or row < 0 or row >= len(self.df):
+            return
+
+        source_path = self._get_media_source_path(self.df.iloc[row])
+        if not source_path:
+            QMessageBox.warning(self, "Скачивание", "Не удалось определить исходный файл")
+            return
+
+        url = self._build_download_url(source_path)
+        if not url:
+            QMessageBox.warning(self, "Скачивание", "Не удалось сформировать ссылку для скачивания")
+            return
+
+        suggested_name = Path(source_path.replace("\\", "/")).name or "downloaded_file"
+        target_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Скачать файл",
+            suggested_name,
+            "All Files (*)",
+        )
+        if not target_path:
+            return
+
+        try:
+            with urlopen(url, timeout=60) as resp, open(target_path, "wb") as out:
+                out.write(resp.read())
+            self.status_label.setText(f"Файл скачан: {Path(target_path).name}")
+        except Exception as e:
+            QMessageBox.warning(self, "Скачивание", f"Не удалось скачать файл:\n{e}")
+
+    def show_image_preview(self, url: str, source_path: str):
+        try:
+            with urlopen(url, timeout=25) as resp:
+                data = resp.read()
+            pixmap = QPixmap()
+            if not pixmap.loadFromData(data):
+                raise RuntimeError("Не удалось декодировать изображение")
+
+            dialog = ImagePreviewDialog(pixmap, f"Предпросмотр: {source_path}", self)
+            dialog.exec()
+        except Exception as e:
+            QMessageBox.warning(
+                self,
+                "Предпросмотр недоступен",
+                f"Не удалось открыть изображение в панели.\nОткроем ссылку в браузере.\n\n{e}",
+            )
+            QDesktopServices.openUrl(QUrl(url))
 
     def rollback_changes(self):
         if getattr(self.current_user, "role", None) != UserRole.ADMIN:
@@ -371,6 +582,9 @@ class TableViewerWidget(QWidget):
         self.save_btn.setEnabled(False)
 
         self.columns = df.columns.tolist()
+        self.display_columns = list(self.columns)
+        if self.table_name in self.MEDIA_COLUMNS and ("link" in self.columns or "source_file" in self.columns):
+            self.display_columns.append(self.DOWNLOAD_COLUMN_KEY)
         self.primary_key = "id" if "id" in self.columns else (self.columns[0] if self.columns else None)
 
         self.status_label.setText(f"Строк: {len(df)} | {exec_time_ms} мс")
@@ -379,13 +593,35 @@ class TableViewerWidget(QWidget):
         try:
             self.table.clear()
             self.table.setRowCount(len(df))
-            self.table.setColumnCount(len(self.columns))
-            self.table.setHorizontalHeaderLabels(self.columns)
+            self.table.setColumnCount(len(self.display_columns))
+            self.table.setHorizontalHeaderLabels([
+                "Скачать" if col == self.DOWNLOAD_COLUMN_KEY else col
+                for col in self.display_columns
+            ])
 
             for i, row in df.iterrows():
-                for j, col_name in enumerate(self.columns):
-                    value = row[col_name]
-                    self.table.setItem(i, j, QTableWidgetItem("" if value is None else str(value)))
+                for j, col_name in enumerate(self.display_columns):
+                    if col_name == self.DOWNLOAD_COLUMN_KEY:
+                        source_path = self._get_media_source_path(row)
+                        item = self._make_link_item("Скачать")
+                        item.setData(Qt.ItemDataRole.UserRole, source_path)
+                        item.setToolTip("Двойной клик: скачать файл")
+                        item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                    else:
+                        value = row[col_name]
+                        text_value = "" if value is None else str(value)
+                        if self._is_media_cell(self.table_name, col_name, text_value) and col_name == "link":
+                            media_type = self._guess_media_type(text_value)
+                            label = "Посмотреть"
+                            if media_type == "audio":
+                                label = "Прослушать"
+                            item = self._make_link_item(label)
+                            item.setData(Qt.ItemDataRole.UserRole, text_value)
+                            item.setToolTip("Двойной клик: открыть файл")
+                            item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                        else:
+                            item = QTableWidgetItem(text_value)
+                    self.table.setItem(i, j, item)
 
             self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         finally:

@@ -82,20 +82,36 @@ class LakehouseAdminPanel(QMainWindow):
         btn_layout = QHBoxLayout()
         add_btn = QPushButton("Добавить пользователя")
         add_btn.clicked.connect(self.add_user)
+        self.edit_user_btn = QPushButton("Редактировать пользователя")
+        self.edit_user_btn.clicked.connect(self.edit_selected_user)
+        self.edit_user_btn.setEnabled(False)
+        self.reset_password_btn = QPushButton("Сбросить пароль")
+        self.reset_password_btn.clicked.connect(self.reset_selected_password)
+        self.reset_password_btn.setEnabled(False)
+        self.delete_user_btn = QPushButton("Удалить пользователя")
+        self.delete_user_btn.clicked.connect(self.delete_selected_user)
+        self.delete_user_btn.setEnabled(False)
         refresh_btn = QPushButton("Обновить")
         refresh_btn.clicked.connect(lambda: self.load_user_management())
         btn_layout.addWidget(add_btn)
+        btn_layout.addWidget(self.edit_user_btn)
+        btn_layout.addWidget(self.reset_password_btn)
+        btn_layout.addWidget(self.delete_user_btn)
         btn_layout.addWidget(refresh_btn)
         btn_layout.addStretch()
         layout.addLayout(btn_layout)
         
         from PyQt6.QtWidgets import QTableWidget, QTableWidgetItem
         self.user_table = QTableWidget()
-        self.user_table.setColumnCount(7)
-        self.user_table.setHorizontalHeaderLabels(["ID", "Имя пользователя", "ФИО", "Роль", "Активен", "Инциденты", "Действия"])
+        self.user_table.setColumnCount(6)
+        self.user_table.setHorizontalHeaderLabels(["ID", "Имя пользователя", "ФИО", "Роль", "Активен", "Инциденты"])
         self.user_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.user_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.user_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.user_table.itemSelectionChanged.connect(self.on_user_selection_changed)
         
         users = self.admin_service.get_all_users()
+        self.user_rows = users
         self.user_table.setRowCount(len(users))
         
         for i, user in enumerate(users):
@@ -105,29 +121,6 @@ class LakehouseAdminPanel(QMainWindow):
             self.user_table.setItem(i, 3, QTableWidgetItem(user.role.value))
             self.user_table.setItem(i, 4, QTableWidgetItem("Да" if user.is_active else "Нет"))
             self.user_table.setItem(i, 5, QTableWidgetItem(getattr(user, "allowed_incident_ids", "") or ""))
-            
-            actions_widget = QWidget()
-            actions_layout = QHBoxLayout(actions_widget)
-            actions_layout.setContentsMargins(0, 0, 0, 0)
-            
-            edit_btn = QPushButton("Редактировать")
-            edit_btn.setFixedWidth(30)
-            edit_btn.clicked.connect(lambda checked, u=user: self.edit_user(u))
-            
-            reset_btn = QPushButton("Сменить пароль")
-            reset_btn.setFixedWidth(30)
-            reset_btn.clicked.connect(lambda checked, u=user: self.reset_password(u))
-            
-            delete_btn = QPushButton("Удалить")
-            delete_btn.setFixedWidth(30)
-            delete_btn.clicked.connect(lambda checked, u=user: self.delete_user(u))
-            
-            actions_layout.addWidget(edit_btn)
-            actions_layout.addWidget(reset_btn)
-            if user.username != 'admin':
-                actions_layout.addWidget(delete_btn)
-            
-            self.user_table.setCellWidget(i, 6, actions_widget)
         
         layout.addWidget(self.user_table)
         
@@ -135,6 +128,48 @@ class LakehouseAdminPanel(QMainWindow):
             self.tab_widget.widget(self.user_management_tab_index).deleteLater()
             self.tab_widget.insertTab(self.user_management_tab_index, widget, "Пользователи")
             self.tab_widget.setCurrentIndex(self.user_management_tab_index)
+
+    def get_selected_user(self):
+        if not hasattr(self, "user_table"):
+            return None
+        selected_rows = self.user_table.selectionModel().selectedRows()
+        if not selected_rows:
+            return None
+        row = selected_rows[0].row()
+        if not hasattr(self, "user_rows") or row >= len(self.user_rows):
+            return None
+        return self.user_rows[row]
+
+    def on_user_selection_changed(self):
+        selected_user = self.get_selected_user()
+        has_selection = selected_user is not None
+        if hasattr(self, "edit_user_btn"):
+            self.edit_user_btn.setEnabled(has_selection)
+        if hasattr(self, "reset_password_btn"):
+            self.reset_password_btn.setEnabled(has_selection)
+        if hasattr(self, "delete_user_btn"):
+            self.delete_user_btn.setEnabled(has_selection and selected_user.username != "admin")
+
+    def edit_selected_user(self):
+        selected_user = self.get_selected_user()
+        if not selected_user:
+            QMessageBox.information(self, "Пользователи", "Выберите пользователя в таблице")
+            return
+        self.edit_user(selected_user)
+
+    def reset_selected_password(self):
+        selected_user = self.get_selected_user()
+        if not selected_user:
+            QMessageBox.information(self, "Пользователи", "Выберите пользователя в таблице")
+            return
+        self.reset_password(selected_user)
+
+    def delete_selected_user(self):
+        selected_user = self.get_selected_user()
+        if not selected_user:
+            QMessageBox.information(self, "Пользователи", "Выберите пользователя в таблице")
+            return
+        self.delete_user(selected_user)
     
     def add_user(self):
         dialog = QDialog(self)
@@ -497,6 +532,20 @@ class LakehouseAdminPanel(QMainWindow):
         try:
             repo_root = Path(__file__).resolve().parents[2]
             airflow_dir = repo_root / "lakehouse_infra"
+
+            # Airflow may keep DAGs paused after first discovery; queued runs won't start until unpaused.
+            for dag_id in (AIRFLOW_DAG_ID,):
+                subprocess.run(
+                    [
+                        "docker", "compose", "exec", "-T",
+                        "airflow-standalone",
+                        "airflow", "dags", "unpause", dag_id,
+                    ],
+                    cwd=str(airflow_dir),
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                )
 
             result = subprocess.run(
                 [
