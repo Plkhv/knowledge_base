@@ -24,7 +24,16 @@ class Database:
         def init_engine(db_url: str):
             return create_engine(db_url, echo=False, pool_pre_ping=True)
 
-        self._engine = init_engine(Config.DATABASE_URL)
+        if Config.DATABASE_URL:
+            self._engine = init_engine(Config.DATABASE_URL)
+        else:
+            db_path = Path(__file__).resolve().parents[1] / "admin_local.sqlite3"
+            sqlite_url = f"sqlite:///{db_path.as_posix()}"
+            logger.warning(
+                "DATABASE_URL is not set. Using local SQLite fallback at %s for the admin app.",
+                db_path,
+            )
+            self._engine = init_engine(sqlite_url)
 
         try:
             inspector = inspect(self._engine)

@@ -19,7 +19,7 @@ import shutil
 import subprocess
 import time
 
-AIRFLOW_DAG_ID = "parallel_trino_loader_opt"
+AIRFLOW_DAG_ID = "data_processing_dag"
 
 class LakehouseAdminPanel(QMainWindow):
     def __init__(self):
@@ -41,11 +41,20 @@ class LakehouseAdminPanel(QMainWindow):
     
     def setup_ui_for_role(self):
         is_admin = self.current_user.role == UserRole.ADMIN
-        self.user_label.setText(f"👤 {self.current_user.full_name} ({self.current_user.role.value})")
+        can_write = self.admin_service.can_write(self.current_user.role)
+        self.user_label.setText(f"Пользователь: {self.current_user.full_name} ({self.current_user.role.value})")
 
         # Raw SQL execution can bypass row-level filters; keep it admin-only.
         if hasattr(self, "sql_btn"):
             self.sql_btn.setEnabled(is_admin)
+
+        if hasattr(self, "add_file_btn"):
+            self.add_file_btn.setVisible(can_write)
+            self.add_file_btn.setEnabled(can_write)
+
+        if hasattr(self, "add_metadata_btn"):
+            self.add_metadata_btn.setVisible(can_write)
+            self.add_metadata_btn.setEnabled(can_write)
 
         if hasattr(self, "users_btn"):
             self.users_btn.setVisible(is_admin)
@@ -63,7 +72,7 @@ class LakehouseAdminPanel(QMainWindow):
         self.statusBar().showMessage(f"Пользователь: {self.current_user.full_name} ({role_text})", 5000)
     
     def add_user_management_tab(self):
-        self.user_management_tab_index = self.tab_widget.addTab(QWidget(), "👥 Пользователи")
+        self.user_management_tab_index = self.tab_widget.addTab(QWidget(), "Пользователи")
         self.load_user_management()
     
     def load_user_management(self):
@@ -71,9 +80,9 @@ class LakehouseAdminPanel(QMainWindow):
         layout = QVBoxLayout(widget)
         
         btn_layout = QHBoxLayout()
-        add_btn = QPushButton("➕ Добавить пользователя")
+        add_btn = QPushButton("Добавить пользователя")
         add_btn.clicked.connect(self.add_user)
-        refresh_btn = QPushButton("🔄 Обновить")
+        refresh_btn = QPushButton("Обновить")
         refresh_btn.clicked.connect(lambda: self.load_user_management())
         btn_layout.addWidget(add_btn)
         btn_layout.addWidget(refresh_btn)
@@ -101,15 +110,15 @@ class LakehouseAdminPanel(QMainWindow):
             actions_layout = QHBoxLayout(actions_widget)
             actions_layout.setContentsMargins(0, 0, 0, 0)
             
-            edit_btn = QPushButton("✏️")
+            edit_btn = QPushButton("Редактировать")
             edit_btn.setFixedWidth(30)
             edit_btn.clicked.connect(lambda checked, u=user: self.edit_user(u))
             
-            reset_btn = QPushButton("🔑")
+            reset_btn = QPushButton("Сменить пароль")
             reset_btn.setFixedWidth(30)
             reset_btn.clicked.connect(lambda checked, u=user: self.reset_password(u))
             
-            delete_btn = QPushButton("🗑️")
+            delete_btn = QPushButton("Удалить")
             delete_btn.setFixedWidth(30)
             delete_btn.clicked.connect(lambda checked, u=user: self.delete_user(u))
             
@@ -124,7 +133,7 @@ class LakehouseAdminPanel(QMainWindow):
         
         if hasattr(self, 'user_management_tab_index'):
             self.tab_widget.widget(self.user_management_tab_index).deleteLater()
-            self.tab_widget.insertTab(self.user_management_tab_index, widget, "👥 Пользователи")
+            self.tab_widget.insertTab(self.user_management_tab_index, widget, "Пользователи")
             self.tab_widget.setCurrentIndex(self.user_management_tab_index)
     
     def add_user(self):
@@ -287,32 +296,32 @@ class LakehouseAdminPanel(QMainWindow):
         toolbar_layout.setContentsMargins(0, 0, 0, 0)
         toolbar_layout.setSpacing(6)
         
-        self.refresh_btn = QPushButton("🔄 Обновить таблицы")
+        self.refresh_btn = QPushButton("Обновить таблицы")
         self.refresh_btn.clicked.connect(self.load_tables)
         toolbar_layout.addWidget(self.refresh_btn)
 
-        self.add_file_btn = QPushButton("📁 Добавить файл")
+        self.add_file_btn = QPushButton("Добавить файл")
         self.add_file_btn.clicked.connect(self.add_files_to_data)
         toolbar_layout.addWidget(self.add_file_btn)
 
-        self.users_btn = QPushButton("👥 Пользователи")
+        self.users_btn = QPushButton("Пользователи")
         self.users_btn.clicked.connect(self.open_user_management)
         self.users_btn.setVisible(False)
         toolbar_layout.addWidget(self.users_btn)
         
-        self.sql_btn = QPushButton("📝 Выполнить SQL")
+        self.sql_btn = QPushButton("Выполнить SQL")
         self.sql_btn.clicked.connect(self.show_sql_dialog)
         toolbar_layout.addWidget(self.sql_btn)
         
-        self.history_btn = QPushButton("📜 История запросов")
+        self.history_btn = QPushButton("История запросов")
         self.history_btn.clicked.connect(self.show_history)
         toolbar_layout.addWidget(self.history_btn)
         
-        self.add_metadata_btn = QPushButton("➕ Добавить метаданные")
+        self.add_metadata_btn = QPushButton("Добавить метаданные")
         self.add_metadata_btn.clicked.connect(self.add_table_metadata)
         toolbar_layout.addWidget(self.add_metadata_btn)
         
-        self.logout_btn = QPushButton("🚪 Выйти")
+        self.logout_btn = QPushButton("Выйти")
         self.logout_btn.clicked.connect(self.logout)
         toolbar_layout.addWidget(self.logout_btn)
         
@@ -340,7 +349,7 @@ class LakehouseAdminPanel(QMainWindow):
         left_layout = QVBoxLayout(left_panel)
         left_layout.setContentsMargins(0, 0, 0, 0)
         
-        tree_header = QLabel("📁 Таблицы Lakehouse")
+        tree_header = QLabel("Список таблиц")
         tree_header.setFixedHeight(32)
         tree_header.setStyleSheet("font-weight: bold; padding: 8px;")
         left_layout.addWidget(tree_header)
@@ -385,7 +394,7 @@ class LakehouseAdminPanel(QMainWindow):
             return
 
         # Tab can be closed by the user; recover it by searching by title.
-        target_title = "👥 Пользователи"
+        target_title = "Пользователи"
         for i in range(self.tab_widget.count()):
             if self.tab_widget.tabText(i) == target_title:
                 self.user_management_tab_index = i
@@ -413,6 +422,10 @@ class LakehouseAdminPanel(QMainWindow):
             QMessageBox.critical(self, "Ошибка", str(e))
 
     def add_files_to_data(self):
+        if not self.current_user or not self.admin_service.can_write(self.current_user.role):
+            QMessageBox.warning(self, "Недостаточно прав", "Загрузка файлов доступна только пользователям с правом записи")
+            return
+
         files, _ = QFileDialog.getOpenFileNames(
             self,
             "Выберите файлы для загрузки",
@@ -453,12 +466,14 @@ class LakehouseAdminPanel(QMainWindow):
         message.append(f"Папка назначения: {self.data_dir}")
 
         trigger_error = None
-        trigger_result = None
+        trigger_ok = None
 
         if copied > 0 and not errors:
-            trigger_result, trigger_error = self.trigger_airflow_dag(uploaded_files)
-            if trigger_result:
+            trigger_ok, trigger_details = self.trigger_airflow_dag(uploaded_files)
+            if trigger_ok:
                 message.append(f"DAG запущен: {AIRFLOW_DAG_ID}")
+            else:
+                trigger_error = trigger_details
 
         if errors:
             message.append("\nОшибки:")
@@ -474,11 +489,9 @@ class LakehouseAdminPanel(QMainWindow):
 
     def trigger_airflow_dag(self, uploaded_files: list[str]):
         payload = {
-            "conf": {
-                "source": "admin_ui",
-                "uploaded_files": uploaded_files,
-                "data_dir": str(self.data_dir),
-            }
+            "source": "admin_ui",
+            "uploaded_files": uploaded_files,
+            "data_dir": str(self.data_dir),
         }
 
         try:
@@ -503,6 +516,11 @@ class LakehouseAdminPanel(QMainWindow):
                 return True, output
 
             details = result.stderr.strip() or result.stdout.strip() or "unknown error"
+            details_lines = [
+                line for line in details.splitlines()
+                if "DeprecationWarning" not in line and "FutureWarning" not in line
+            ]
+            details = "\n".join(details_lines).strip() or details
             return False, details
         except Exception as exc:
             return False, str(exc)
@@ -533,6 +551,10 @@ class LakehouseAdminPanel(QMainWindow):
         self.tab_widget.removeTab(index)
     
     def show_sql_dialog(self):
+        if not self.current_user or self.current_user.role != UserRole.ADMIN:
+            QMessageBox.warning(self, "Недостаточно прав", "Выполнение SQL доступно только администратору")
+            return
+
         dialog = QDialog(self)
         dialog.setWindowTitle("Выполнить SQL запрос")
         dialog.setMinimumSize(600, 400)
@@ -545,7 +567,7 @@ class LakehouseAdminPanel(QMainWindow):
         layout.addWidget(sql_edit)
         
         btn_layout = QHBoxLayout()
-        execute_btn = QPushButton("▶️ Выполнить")
+        execute_btn = QPushButton("Выполнить")
         cancel_btn = QPushButton("Отмена")
         btn_layout.addWidget(execute_btn)
         btn_layout.addWidget(cancel_btn)
@@ -637,6 +659,10 @@ class LakehouseAdminPanel(QMainWindow):
         self.tab_widget.setCurrentWidget(widget)
     
     def add_table_metadata(self):
+        if not self.current_user or not self.admin_service.can_write(self.current_user.role):
+            QMessageBox.warning(self, "Недостаточно прав", "Изменение метаданных доступно только пользователям с правом записи")
+            return
+
         table_name, ok = QInputDialog.getText(self, "Добавить метаданные", "Имя таблицы:")
         if not ok or not table_name:
             return

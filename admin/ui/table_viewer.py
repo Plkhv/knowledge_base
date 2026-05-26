@@ -70,12 +70,12 @@ class TableViewerWidget(QWidget):
         self.refresh_btn.clicked.connect(self.load_data)
         toolbar.addWidget(self.refresh_btn)
         
-        self.add_btn = QPushButton("➕ Добавить запись")
+        self.add_btn = QPushButton("Add record")
         self.add_btn.clicked.connect(self.add_record)
         self.add_btn.setEnabled(self.can_write)  # Только если есть права на запись
         toolbar.addWidget(self.add_btn)
         
-        self.delete_btn = QPushButton("🗑️ Удалить запись")
+        self.delete_btn = QPushButton("Delete record")
         self.delete_btn.clicked.connect(self.delete_record)
         self.delete_btn.setEnabled(self.can_write)  # Только если есть права на запись
         toolbar.addWidget(self.delete_btn)
@@ -87,13 +87,13 @@ class TableViewerWidget(QWidget):
         self.limit_spin.valueChanged.connect(self.load_data)
         toolbar.addWidget(self.limit_spin)
         
-        self.save_btn = QPushButton("💾 Сохранить изменения")
+        self.save_btn = QPushButton("Save changes")
         self.save_btn.clicked.connect(self.save_changes)
         self.save_btn.setEnabled(False)
         self.save_btn.setVisible(self.can_write)  # Только если есть права на запись
         toolbar.addWidget(self.save_btn)
 
-        self.rollback_btn = QPushButton("⏪ Откат")
+        self.rollback_btn = QPushButton("Rollback")
         self.rollback_btn.clicked.connect(self.rollback_changes)
         self.rollback_btn.setVisible(getattr(self.current_user, "role", None) == UserRole.ADMIN)
         toolbar.addWidget(self.rollback_btn)

@@ -81,10 +81,10 @@ def check_trino() -> bool:
     try:
         resp = requests.get(f"http://{TRINO_HOST}:{TRINO_PORT}/v1/info", timeout=5)
         version = resp.json().get("nodeVersion", {}).get("version", "unknown")
-        print(f"✅ Trino доступен (версия: {version})")
+        print(f"Trino доступен (версия: {version})")
         return True
     except Exception as e:
-        print(f"❌ Trino недоступен: {e}")
+        print(f"Trino недоступен: {e}")
         return False
 
 
@@ -160,7 +160,7 @@ def read_model_xlsx(model_path: Path) -> dict[str, list[ColumnSpec]]:
 
 
 def create_iceberg_tables(schema: dict[str, list[ColumnSpec]], *, run_id: str, base_location: str):
-    print("\n📁 Создание Iceberg таблиц...")
+    print("\nСоздание Iceberg таблиц...")
 
     created: set[str] = set()
 
@@ -169,9 +169,9 @@ def create_iceberg_tables(schema: dict[str, list[ColumnSpec]], *, run_id: str, b
 
         try:
             cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {TRINO_CATALOG}.{TRINO_SCHEMA}")
-            print(f"  ✅ Схема {TRINO_CATALOG}.{TRINO_SCHEMA} создана")
+            print(f"  Схема {TRINO_CATALOG}.{TRINO_SCHEMA} создана")
         except Exception as e:
-            print(f"  ⚠️ Ошибка при создании схемы: {e}")
+            print(f"  Ошибка при создании схемы: {e}")
 
         for table_name, cols in schema.items():
             full_name = f"{TRINO_CATALOG}.{TRINO_SCHEMA}.{table_name}"
@@ -182,7 +182,7 @@ def create_iceberg_tables(schema: dict[str, list[ColumnSpec]], *, run_id: str, b
             try:
                 cursor.execute(f"DROP TABLE IF EXISTS {full_name}")
             except Exception as e:
-                print(f"  ⚠️ Не удалось удалить таблицу {full_name}: {e}")
+                print(f"  Не удалось удалить таблицу {full_name}: {e}")
 
             cols_sql = ",\n    ".join([f'"{c.name}" {c.trino_type}' for c in cols])
             create_sql = f"""
@@ -196,9 +196,9 @@ CREATE TABLE {full_name} (
             try:
                 cursor.execute(create_sql)
                 created.add(table_name)
-                print(f"  ✅ Таблица {table_name} создана ({len(cols)} колонок)")
+                print(f"  Таблица {table_name} создана ({len(cols)} колонок)")
             except Exception as e:
-                print(f"  ❌ Ошибка создания таблицы {table_name}: {e}")
+                print(f"  Ошибка создания таблицы {table_name}: {e}")
 
     return created
 
@@ -284,7 +284,7 @@ def _coerce_param_value(value):
 
 def insert_dataframe_to_trino(df: pd.DataFrame, *, table_name: str, cols: list[ColumnSpec], batch_size: int = 200):
     if df.empty:
-        print(f"  ⚠️ {table_name}: данных нет, пропуск")
+        print(f"  {table_name}: данных нет, пропуск")
         return 0
 
     full_name = f"{TRINO_CATALOG}.{TRINO_SCHEMA}.{table_name}"
@@ -309,7 +309,7 @@ def insert_dataframe_to_trino(df: pd.DataFrame, *, table_name: str, cols: list[C
     values = list(df.itertuples(index=False, name=None))
     total = len(values)
 
-    print(f"  ⏳ {table_name}: вставка {total} строк...")
+    print(f"  {table_name}: вставка {total} строк...")
 
     inserted = 0
     with get_trino_connection() as conn:
@@ -331,7 +331,7 @@ def insert_dataframe_to_trino(df: pd.DataFrame, *, table_name: str, cols: list[C
                 pass
             inserted += len(batch_rows)
 
-    print(f"  ✅ {table_name}: загружено {inserted} записей")
+    print(f"  {table_name}: загружено {inserted} записей")
     return inserted
 
 
@@ -374,7 +374,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     print("=" * 76)
-    print("🚀 Загрузка данных в Lakehouse (MinIO + Iceberg) по Модель.xlsx")
+    print("Загрузка данных в Lakehouse по Модель.xlsx")
     print("=" * 76)
 
     if not check_trino():
@@ -382,40 +382,40 @@ def main(argv: list[str] | None = None) -> int:
 
     model_path = Path(args.model)
     if not model_path.exists():
-        print(f"❌ Модель не найдена: {model_path}")
+        print(f"Модель не найдена: {model_path}")
         return 2
 
     output_dirs = [Path(args.output), Path(args.output2)]
 
     schema = read_model_xlsx(model_path)
-    print(f"\n📊 Найдено таблиц в модели: {len(schema)}")
+    print(f"\nНайдено таблиц в модели: {len(schema)}")
 
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:8]
     created = create_iceberg_tables(schema, run_id=run_id, base_location=args.base_location)
 
     if args.create_only:
-        print("\n✅ Таблицы созданы (create-only)")
+        print("\nТаблицы созданы (create-only)")
         return 0
 
-    print("\n💾 Загрузка данных из JSON (если файлы есть)...")
+    print("\nЗагрузка данных из JSON (если файлы есть)...")
 
     total_inserted = 0
     tables_with_data = 0
 
     for table_name, cols in schema.items():
         if table_name not in created:
-            print(f"  ⚠️ {table_name}: таблица не создана, пропуск загрузки")
+            print(f"  {table_name}: таблица не создана, пропуск загрузки")
             continue
 
         data_file = find_table_data_file(table_name, output_dirs)
         if not data_file:
-            print(f"  ⚠️ {table_name}: JSON не найден (ожидалось в {', '.join(map(str, output_dirs))})")
+            print(f"  {table_name}: JSON не найден (ожидалось в {', '.join(map(str, output_dirs))})")
             continue
 
         records = _read_json_records(data_file)
         df = dataframe_from_records(records)
         if df.empty:
-            print(f"  ⚠️ {table_name}: {data_file.name} пустой")
+            print(f"  {table_name}: {data_file.name} пустой")
             continue
 
         try:
@@ -424,11 +424,11 @@ def main(argv: list[str] | None = None) -> int:
                 tables_with_data += 1
                 total_inserted += inserted
         except Exception as e:
-            print(f"  ❌ {table_name}: ошибка загрузки данных: {e}")
+            print(f"  {table_name}: ошибка загрузки данных: {e}")
             continue
 
     print("\n" + "=" * 76)
-    print(f"✅ Готово: создано таблиц {len(created)}/{len(schema)}, загружено таблиц {tables_with_data}, строк {total_inserted}")
+    print(f"Готово: создано таблиц {len(created)}/{len(schema)}, загружено таблиц {tables_with_data}, строк {total_inserted}")
     print("=" * 76)
 
     return 0

@@ -14,12 +14,15 @@ from datetime import datetime
 from services.lakehouse_service import LakehouseService
 import re
 import numbers
+import os
 from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 _SAFE_IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _SAFE_INCIDENT_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+_SENSITIVE_LITERAL_RE = re.compile(r"'([^']|'')*'")
+_SENSITIVE_KV_RE = re.compile(r"(?i)\b(password|secret|token|api[_-]?key)\s*=\s*'([^']|'')*'")
 
 class AdminService:
     def __init__(self):
@@ -67,7 +70,17 @@ class AdminService:
         try:
             existing = session.query(User).filter_by(username="admin").first()
             if not existing:
-                hashed = bcrypt.hashpw("admin123".encode('utf-8'), bcrypt.gensalt())
+                bootstrap_password = (
+                    os.getenv("ADMIN_BOOTSTRAP_PASSWORD")
+                    or Config.ADMIN_BOOTSTRAP_PASSWORD
+                )
+                if not bootstrap_password:
+                    logger.warning(
+                        "No bootstrap admin password configured; set ADMIN_BOOTSTRAP_PASSWORD to create the initial admin account."
+                    )
+                    return
+
+                hashed = bcrypt.hashpw(bootstrap_password.encode('utf-8'), bcrypt.gensalt())
                 admin = User(
                     username="admin",
                     password_hash=hashed.decode('utf-8'),
@@ -77,11 +90,20 @@ class AdminService:
                 )
                 session.add(admin)
                 session.commit()
-                logger.info("Default admin user created: admin / admin123")
+                logger.info("Bootstrap admin user created from ADMIN_BOOTSTRAP_PASSWORD")
         except Exception as e:
             logger.error(f"Error creating default admin: {e}")
         finally:
             session.close()
+
+    @staticmethod
+    def _sanitize_history_text(value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        sanitized = _SENSITIVE_KV_RE.sub(lambda match: f"{match.group(1)}='***'", value)
+        sanitized = _SENSITIVE_LITERAL_RE.sub("'***'", sanitized)
+        return sanitized[:500]
     
     # ==================== Аутентификация ====================
     
@@ -255,12 +277,12 @@ class AdminService:
             history = QueryHistory(
                 user_id=user_id,
                 username=username,
-                query_text=query_text[:500],
+                query_text=self._sanitize_history_text(query_text) or "",
                 table_name=table_name[:255],
                 execution_time_ms=execution_time_ms,
                 row_count=row_count,
                 status=status,
-                error_message=error_message[:500] if error_message else None
+                error_message=self._sanitize_history_text(error_message),
             )
             session.add(history)
             session.commit()

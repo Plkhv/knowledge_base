@@ -125,7 +125,7 @@ def create_metrics_tables(spark: SparkSession, catalog: str, namespace: str):
         ) USING iceberg
     """)
     
-    print("✅ Tables created/verified: fire_metrics, incident_metrics, ventilation_metrics")
+    print("Tables created/verified: fire_metrics, incident_metrics, ventilation_metrics")
 
 
 # ============================================
@@ -135,7 +135,7 @@ def create_metrics_tables(spark: SparkSession, catalog: str, namespace: str):
 def calculate_fire_metrics(spark: SparkSession, catalog: str, namespace: str, incident_id: str):
     """Рассчитывает пожарные метрики на основе air_analysis"""
     
-    print("\n🔥 Calculating fire_metrics...")
+    print("\nCalculating fire_metrics...")
     
     # Читаем данные анализов воздуха
     air_df = spark.table(f"{catalog}.{namespace}.air_analysis") \
@@ -180,7 +180,7 @@ def calculate_fire_metrics(spark: SparkSession, catalog: str, namespace: str, in
     fire_metrics_df.writeTo(f"{catalog}.{namespace}.fire_metrics").append()
     
     count = fire_metrics_df.count()
-    print(f"   ✅ Calculated {count} fire_metrics records")
+    print(f"   Calculated {count} fire_metrics records")
 
 
 # ============================================
@@ -190,7 +190,7 @@ def calculate_fire_metrics(spark: SparkSession, catalog: str, namespace: str, in
 def calculate_incident_metrics(spark: SparkSession, catalog: str, namespace: str, incident_id: str):
     """Рассчитывает общие метрики инцидента"""
     
-    print("\n📊 Calculating incident_metrics...")
+    print("\nCalculating incident_metrics...")
     
     # 5.1. Количество погибших и пострадавших из incident_description
     incident_desc = spark.table(f"{catalog}.{namespace}.incident_description") \
@@ -258,7 +258,7 @@ def calculate_incident_metrics(spark: SparkSession, catalog: str, namespace: str
     )
     
     incident_metrics_df.writeTo(f"{catalog}.{namespace}.incident_metrics").append()
-    print(f"   ✅ Calculated 1 incident_metrics record")
+    print(f"   Calculated 1 incident_metrics record")
     print(f"      fatalities: {fatalities}, injuries: {injuries}")
     print(f"      affected_area: {affected_area_length} records")
     print(f"      is_seismic_event: {is_seismic}")
@@ -271,7 +271,7 @@ def calculate_incident_metrics(spark: SparkSession, catalog: str, namespace: str
 def calculate_ventilation_metrics(spark: SparkSession, catalog: str, namespace: str, incident_id: str):
     """Рассчитывает вентиляционные метрики на основе premise_parameters"""
     
-    print("\n💨 Calculating ventilation_metrics...")
+    print("\nCalculating ventilation_metrics...")
     
     # Читаем параметры выработок
     params_df = spark.table(f"{catalog}.{namespace}.premise_parameters") \
@@ -355,7 +355,7 @@ def calculate_ventilation_metrics(spark: SparkSession, catalog: str, namespace: 
     
     ventilation_metrics_df.writeTo(f"{catalog}.{namespace}.ventilation_metrics").append()
     
-    print(f"   ✅ Calculated 1 ventilation_metrics record")
+    print(f"   Calculated 1 ventilation_metrics record")
     print(f"      min_velocity: {min_velocity} m/s")
     print(f"      velocity_deficit: {velocity_deficit}%")
     print(f"      leakage_coefficient: {leakage_coefficient}")
@@ -378,10 +378,10 @@ def main():
     args = parser.parse_args()
     
     print("=" * 70)
-    print("📊 CALCULATING ALL METRICS")
-    print(f"📚 Catalog: {args.catalog}")
-    print(f"📁 Namespace: {args.namespace}")
-    print(f"🆔 Incident ID: {args.incident_id}")
+    print("CALCULATING ALL METRICS")
+    print(f"Catalog: {args.catalog}")
+    print(f"Namespace: {args.namespace}")
+    print(f"Incident ID: {args.incident_id}")
     print("=" * 70)
     
     # Создаём Spark сессию
@@ -396,7 +396,7 @@ def main():
     calculate_ventilation_metrics(spark, args.catalog, args.namespace, args.incident_id)
     
     print("\n" + "=" * 70)
-    print("✅ ALL METRICS CALCULATED SUCCESSFULLY!")
+    print("ALL METRICS CALCULATED SUCCESSFULLY")
     print("=" * 70)
     
     spark.stop()

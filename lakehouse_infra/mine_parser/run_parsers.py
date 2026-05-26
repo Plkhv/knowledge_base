@@ -57,15 +57,15 @@ class ParserRunner:
     def run(self):
         """Запускает рекурсивную обработку всех файлов"""
         logger.info("=" * 70)
-        logger.info("🚀 ЗАПУСК ПАРСЕРОВ")
-        logger.info(f"📁 Входная директория: {self.input_dir}")
-        logger.info(f"📁 Выходная директория: {self.output_dir}")
-        logger.info(f"📄 Расширения: {self.extensions}")
+        logger.info("Запуск парсеров")
+        logger.info(f"Входная директория: {self.input_dir}")
+        logger.info(f"Директория вывода: {self.output_dir}")
+        logger.info(f"Расширения: {self.extensions}")
         logger.info("=" * 70)
         
         # Рекурсивно находим все файлы
         files = self.factory.get_all_files(str(self.input_dir), self.extensions)
-        logger.info(f"📄 Найдено файлов: {len(files)}")
+        logger.info(f"Найдено файлов: {len(files)}")
         
         for file_path in files:
             self._process_file(file_path)
@@ -111,9 +111,9 @@ class ParserRunner:
                     'status': 'success'
                 })
                 
-                logger.info(f"  ✓ {relative_path} -> {', '.join(tables_info)}")
+                logger.info(f"  OK {relative_path} -> {', '.join(tables_info)}")
             else:
-                logger.warning(f"  ⚠ {relative_path} -> записей не найдено")
+                logger.warning(f"  Записей не найдено: {relative_path}")
                 
         except Exception as e:
             self.stats['files_failed'] += 1
@@ -122,7 +122,7 @@ class ParserRunner:
                 'status': 'failed',
                 'error': str(e)
             })
-            logger.error(f"  ✗ {relative_path}: Ошибка - {str(e)}")
+            logger.error(f"  ERROR {relative_path}: {str(e)}")
     
     def _save_all_results(self):
         """Сохраняет все результаты в JSON файлы"""
@@ -138,19 +138,19 @@ class ParserRunner:
             with open(output_file, 'w', encoding='utf-8') as f:
                 json.dump(records, f, ensure_ascii=False, indent=2)
             
-            logger.info(f"  💾 {table_name}: {len(records)} записей -> {output_file.name}")
+            logger.info(f"  Сохранено {table_name}: {len(records)} записей -> {output_file.name}")
     
     def _print_summary(self):
         """Выводит итоговую статистику"""
         logger.info("\n" + "=" * 70)
-        logger.info("📊 ИТОГОВАЯ СТАТИСТИКА")
+        logger.info("ФИНАЛЬНАЯ СТАТИСТИКА")
         logger.info("=" * 70)
-        logger.info(f"📄 Обработано файлов: {self.stats['files_processed']}")
-        logger.info(f"❌ Ошибок: {self.stats['files_failed']}")
-        logger.info(f"📝 Всего записей: {self.stats['total_records']}")
+        logger.info(f"Обработано файлов: {self.stats['files_processed']}")
+        logger.info(f"Ошибки: {self.stats['files_failed']}")
+        logger.info(f"Всего записей: {self.stats['total_records']}")
         
         if self.stats['by_table']:
-            logger.info("\n📋 По таблицам:")
+            logger.info("\nПо таблицам:")
             for table_name, count in sorted(self.stats['by_table'].items()):
                 logger.info(f"  • {table_name}: {count} записей")
         
@@ -166,7 +166,7 @@ class ParserRunner:
         with open(summary_file, 'w', encoding='utf-8') as f:
             json.dump(summary, f, ensure_ascii=False, indent=2)
         
-        logger.info(f"\n💾 Статистика сохранена в {summary_file.name}")
+        logger.info(f"\nСтатистика сохранена в {summary_file.name}")
 
 
 def main():
@@ -227,22 +227,22 @@ def process_single_file(file_path: str, output_dir: str):
             with open(output_file, 'w', encoding='utf-8') as f:
                 json.dump(records, f, ensure_ascii=False, indent=2)
             
-            print(f"✅ Сохранено {len(records)} записей в {output_file}")
+            print(f"Сохранено {len(records)} записей в {output_file}")
             total_records += len(records)
         
-        print(f"\n📋 Итого: {total_records} записей в {len(results_by_table)} таблицах")
+        print(f"\nВсего: {total_records} записей в {len(results_by_table)} таблицах")
         
         # Показываем пример первой записи из первой таблицы
         first_table = list(results_by_table.keys())[0]
         first_records = results_by_table[first_table]
         if first_records:
-            print(f"\n📋 Пример первой записи из таблицы {first_table}:")
+            print(f"\nПример первой записи из таблицы {first_table}:")
             for key, value in first_records[0].items():
                 if value and not key.startswith('_'):
                     value_str = str(value)[:100]
                     print(f"  {key}: {value_str}")
     else:
-        print("⚠ Записей не найдено")
+        print("Записей не найдено")
 
 
 if __name__ == "__main__":
