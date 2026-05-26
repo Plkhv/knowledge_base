@@ -315,8 +315,28 @@ class TableViewerWidget(QWidget):
             return
 
         try:
-            with urlopen(url, timeout=60) as resp, open(target_path, "wb") as out:
-                out.write(resp.read())
+            # Stream download with a reasonable size cap to avoid DoS or disk exhaustion
+            max_bytes = 200 * 1024 * 1024  # 200 MB
+            total = 0
+            with urlopen(url, timeout=60) as resp:
+                # Respect Content-Length header when present
+                try:
+                    content_length = int(resp.getheader("Content-Length") or 0)
+                except Exception:
+                    content_length = 0
+                if content_length and content_length > max_bytes:
+                    raise RuntimeError("Файл слишком большой для загрузки")
+
+                with open(target_path, "wb") as out:
+                    while True:
+                        chunk = resp.read(8192)
+                        if not chunk:
+                            break
+                        total += len(chunk)
+                        if total > max_bytes:
+                            raise RuntimeError("Файл превышает допустимый размер во время загрузки")
+                        out.write(chunk)
+
             self.status_label.setText(f"Файл скачан: {Path(target_path).name}")
         except Exception as e:
             QMessageBox.warning(self, "Скачивание", f"Не удалось скачать файл:\n{e}")
@@ -324,7 +344,21 @@ class TableViewerWidget(QWidget):
     def show_image_preview(self, url: str, source_path: str):
         try:
             with urlopen(url, timeout=25) as resp:
-                data = resp.read()
+                # Quick content-type check to avoid loading non-image data
+                content_type = ""
+                try:
+                    content_type = (resp.getheader("Content-Type") or "").lower()
+                except Exception:
+                    content_type = ""
+                if not content_type.startswith("image/"):
+                    raise RuntimeError(f"Ожидалось изображение, получен Content-Type: {content_type}")
+
+                # Limit preview size to avoid excessive memory usage
+                max_preview_bytes = 10 * 1024 * 1024  # 10 MB
+                data = resp.read(max_preview_bytes + 1)
+                if len(data) > max_preview_bytes:
+                    raise RuntimeError("Изображение слишком велико для предпросмотра")
+
             pixmap = QPixmap()
             if not pixmap.loadFromData(data):
                 raise RuntimeError("Не удалось декодировать изображение")

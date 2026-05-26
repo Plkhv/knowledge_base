@@ -28,6 +28,7 @@ from airflow.exceptions import AirflowSkipException
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
+import re
 import json
 import os
 import sys
@@ -60,11 +61,14 @@ ALL_EXTENSIONS = ALLOWED_EXTENSIONS | GRAPHIC_EXTENSIONS
 BATCH_SIZE = 1000
 
 MINIO_CONFIG = {
-    'endpoint':   'http://minio:9000',
-    'access_key': 'admin',
-    'secret_key': 'password',
-    'bucket':     'lakehouse',
+    'endpoint':   os.getenv('MINIO_ENDPOINT', 'http://minio:9000'),
+    'access_key': os.getenv('MINIO_ACCESS_KEY', 'admin'),
+    'secret_key': os.getenv('MINIO_SECRET_KEY', 'password'),
+    'bucket':     os.getenv('MINIO_BUCKET', 'lakehouse'),
 }
+
+# Safe identifier for table names (alphanumeric + underscore, cannot start with digit)
+_SAFE_IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 TRINO_CONFIG = {
     'host':    'trino',
@@ -197,6 +201,10 @@ def insert_to_trino_batch(table_name: str, records: list,
         return 0
 
     cols_str   = ', '.join(reference_columns)
+    # Validate table name to avoid injection through parser-provided names
+    if not _SAFE_IDENT_RE.match(str(table_name)):
+        logging.error(f"Unsafe table name skipped: {table_name}")
+        return 0
     full_table = f"{TRINO_CONFIG['catalog']}.{TRINO_CONFIG['schema']}.{table_name}"
     inserted   = 0
 

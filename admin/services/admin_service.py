@@ -403,7 +403,14 @@ class AdminService:
         if not self.can_read(user_role):
             raise PermissionError("У вас нет прав на просмотр данных")
 
-        query = f"SELECT * FROM {table_name}"
+        # Validate/qualify table name to avoid SQL injection via identifiers
+        try:
+            schema, base = self.lakehouse._split_table_name(table_name)
+            qualified = f'"{schema}"."{base}"'
+        except Exception:
+            raise ValueError("Invalid table name")
+
+        query = f"SELECT * FROM {qualified}"
         role = self._normalize_role(user_role) if user_role is not None else None
         if role in {UserRole.EXPERT, UserRole.VIEWER}:
             if current_user is None:
@@ -419,7 +426,7 @@ class AdminService:
                 ids_sql = ",".join([f"'{i}'" for i in allowed_ids])
                 query += f" WHERE incident_id IN ({ids_sql})"
 
-        query += f" LIMIT {int(limit)}"
+        query += f" LIMIT {max(1, min(int(limit), 10000))}"
         try:
             if self.trino_engine is not None:
                 return pd.read_sql(query, self.trino_engine)
@@ -431,7 +438,12 @@ class AdminService:
     def get_table_columns(self, table_name: str) -> list:
         try:
             if self.trino_engine is not None:
-                result = pd.read_sql(f"SHOW COLUMNS FROM {table_name}", self.trino_engine)
+                try:
+                    schema, base = self.lakehouse._split_table_name(table_name)
+                    qualified = f'"{schema}"."{base}"'
+                except Exception:
+                    raise ValueError("Invalid table name")
+                result = pd.read_sql(f"SHOW COLUMNS FROM {qualified}", self.trino_engine)
                 return result['Column'].tolist()
 
             described = self.lakehouse.get_table_schema(table_name)

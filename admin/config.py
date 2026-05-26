@@ -33,7 +33,7 @@ class Config:
     PG_PORT = _env("PG_PORT", "5432")
     PG_DATABASE = _env("PG_DATABASE", "polaris")
     PG_USER = _env("PG_USER", "polaris")
-    PG_PASSWORD = _env("PG_PASSWORD", "password")
+    PG_PASSWORD = _env("PG_PASSWORD", None)
     ADMIN_BOOTSTRAP_PASSWORD = _env("ADMIN_BOOTSTRAP_PASSWORD") or _env("AIRFLOW_ADMIN_PASSWORD")
 
     # Если DATABASE_URL не задан — собираем URL для Postgres из отдельных переменных
@@ -55,11 +55,23 @@ class Config:
     # MinIO (для ссылок/предпросмотра медиа)
     MINIO_ENDPOINT = _env("MINIO_ENDPOINT", "http://localhost:9000")
     MINIO_PUBLIC_URL = _env("MINIO_PUBLIC_URL", MINIO_ENDPOINT)
-    MINIO_ACCESS_KEY = _env("MINIO_ACCESS_KEY") or _env("MINIO_ROOT_USER", "admin")
-    MINIO_SECRET_KEY = _env("MINIO_SECRET_KEY") or _env("MINIO_ROOT_PASSWORD", "password")
+    MINIO_ACCESS_KEY = _env("MINIO_ACCESS_KEY") or _env("MINIO_ROOT_USER", None)
+    MINIO_SECRET_KEY = _env("MINIO_SECRET_KEY") or _env("MINIO_ROOT_PASSWORD", None)
     MINIO_PRESIGN_TTL_SECONDS = int(_env("MINIO_PRESIGN_TTL_SECONDS", "3600"))
     
     # Приложение
     APP_NAME = "Lakehouse Admin Panel"
     APP_VERSION = "1.0.0"
+
+    @classmethod
+    def validate_security(cls):
+        import logging
+        _logger = logging.getLogger(__name__)
+
+        if not cls.PG_PASSWORD:
+            _logger.warning("PG_PASSWORD is not set. Using an empty or missing DB password is insecure.")
+        if not cls.MINIO_SECRET_KEY:
+            _logger.warning("MINIO_SECRET_KEY is not set. MinIO access may be insecure if defaults are used.")
+        if not cls.ADMIN_BOOTSTRAP_PASSWORD:
+            _logger.warning("ADMIN_BOOTSTRAP_PASSWORD is not set. Bootstrap admin account may be unprotected.")
 

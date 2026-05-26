@@ -1,14 +1,18 @@
 # upload_to_minio.py
 from pathlib import Path
 from minio import Minio
+import os
 
-# Настройки
-MINIO_ENDPOINT = "localhost:9000"  # MinIO на хосте
-MINIO_ACCESS_KEY = "admin"
-MINIO_SECRET_KEY = "password"
-BUCKET = "lakehouse"
-INCIDENT_ID = "INC-2023-001"
-OUTPUT_DIR = "mine_parser\output"
+# Настройки (требовать через окружение в целях безопасности)
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "localhost:9000")
+MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY")
+MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY")
+BUCKET = os.getenv("MINIO_BUCKET", "lakehouse")
+INCIDENT_ID = os.getenv("INCIDENT_ID", "INC-2023-001")
+OUTPUT_DIR = "mine_parser/output"
+
+if not MINIO_ACCESS_KEY or not MINIO_SECRET_KEY:
+    raise RuntimeError("MINIO_ACCESS_KEY and MINIO_SECRET_KEY must be set in environment")
 
 def main():
     client = Minio(

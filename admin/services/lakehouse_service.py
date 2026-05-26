@@ -105,9 +105,11 @@ class LakehouseService:
     
     def get_table_schema(self, table_name: str) -> list:
         try:
+            schema, base = self._split_table_name(table_name)
+            qualified = f'"{schema}"."{base}"'
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute(f"DESCRIBE {table_name}")
+                cursor.execute(f"DESCRIBE {qualified}")
                 return cursor.fetchall()
         except Exception as e:
             logger.error(f"Error getting schema: {e}")
@@ -115,7 +117,10 @@ class LakehouseService:
     
     def query_table(self, table_name: str, limit: int = 100) -> pd.DataFrame:
         try:
-            query = f"SELECT * FROM {table_name} LIMIT {limit}"
+            schema, base = self._split_table_name(table_name)
+            qualified = f'"{schema}"."{base}"'
+            limit_val = max(1, min(int(limit), 10000))
+            query = f"SELECT * FROM {qualified} LIMIT {limit_val}"
             return pd.read_sql(query, self._get_connection())
         except Exception as e:
             logger.error(f"Error querying table: {e}")
