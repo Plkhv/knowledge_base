@@ -127,15 +127,27 @@ def _val_to_sql(col: str, val) -> str:
         return 'NULL'
     if isinstance(val, bool):
         return 'TRUE' if val else 'FALSE'
-    # category — VARCHAR, но парсер может вернуть int; обрабатываем до int/float
     if col == 'category':
         return "'" + str(val).replace("'", "''") + "'"
     if isinstance(val, (int, float)):
         return 'NULL' if val in SENTINEL else str(val)
-    # TIMESTAMP-колонки: строка → TIMESTAMP 'YYYY-MM-DD HH:MM:SS'
+    
+    # TIMESTAMP колонки с валидацией
     if col in TIMESTAMP_COLS:
+        if val is None or str(val).strip() in ('', 'None', 'null'):
+            return 'NULL'
         ts = str(val).strip()
-        return f"TIMESTAMP '{ts}'" if ts and ts != 'None' else 'NULL'
+        # Убираем часовой пояс если есть
+        ts = ts.split('+')[0].split('Z')[0].split('.')[0]
+        # Проверяем базовый формат
+        if len(ts) >= 19 and ts[4] == '-' and ts[7] == '-':
+            return f"TIMESTAMP '{ts}'"
+        else:
+            # Если формат неправильный - вставляем как строку
+            logging.warning(f"Invalid timestamp format for {col}: {ts}, inserting as string")
+            return "'" + ts.replace("'", "''") + "'"
+    
+    # Обычные строки
     return "'" + str(val).replace("'", "''") + "'"
 
 

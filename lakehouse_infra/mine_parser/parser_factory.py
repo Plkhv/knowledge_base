@@ -101,6 +101,7 @@ class ParserFactory:
             'seismic': SeismicParser(inc_id),
             'expert': ExpertParser(inc_id),
             'hypothesis_facts': HypothesisFactsParser(inc_id),
+            'graphic_reestr':   GraphicReestrParser(inc_id),
         }
     
     def _load_routing(self) -> Dict:
