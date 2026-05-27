@@ -1,7 +1,7 @@
 # parsers/graphic_reestr_parser.py
 # -*- coding: utf-8 -*-
 """
-GraphicReestrParser — регистрирует графические файлы в таблице graphic_reestr.
+MediaReestrParser — регистрирует графические файлы в таблице graphic_reestr.
 
 Не читает содержимое файла — формирует запись реестра на основе имени файла:
   - material_id  : UUID
@@ -10,8 +10,6 @@ GraphicReestrParser — регистрирует графические файл
   - link         : S3-путь (заполняется DAG-ом через record['link'] = s3_path)
   - source_file  : S3-путь (заполняется DAG-ом через setdefault)
 
-Поддерживаемые расширения:
-  .dwg .jpg .jpeg .png .pdf .tif .tiff .bmp .svg
 """
 
 import re
@@ -25,9 +23,14 @@ from parsers.base_parser import BaseParser
 logger = logging.getLogger(__name__)
 
 # Расширения которые обрабатывает этот парсер
-GRAPHIC_EXTENSIONS = {
+MEDIA_EXTENSIONS = {
+    # Графика
     '.dwg', '.jpg', '.jpeg', '.png',
     '.pdf', '.tif', '.tiff', '.bmp', '.svg',
+    # Аудио
+    '.mp3', '.wav', '.ogg', '.m4a', 
+    '.flac', '.aac', '.wma', '.opus', 
+    '.amr', '.aiff',
 }
 
 # Очистка имени файла: даты, спецсимволы → пробелы
@@ -81,7 +84,7 @@ def _infer_type(filename_stem: str) -> str:
     return 'Графический материал'
 
 
-class GraphicReestrParser(BaseParser):
+class MediaReestrParser(BaseParser):
     """
     Парсер графических файлов.
 
@@ -96,7 +99,7 @@ class GraphicReestrParser(BaseParser):
     def supports(self, file_name: str) -> bool:
             """Проверяет, поддерживает ли парсер данный файл по расширению"""
             ext = Path(file_name).suffix.lower()
-            return ext in GRAPHIC_EXTENSIONS
+            return ext in MEDIA_EXTENSIONS
 
     def parse_file(self, file_path: str) -> Dict[str, List[Dict[str, Any]]]:
         """

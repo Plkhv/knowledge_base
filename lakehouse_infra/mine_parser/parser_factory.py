@@ -30,7 +30,7 @@ from parsers.witness_parser import WitnessParser
 from parsers.hypothesis_facts_parser import HypothesisFactsParser
 from parsers.seismic_parser import SeismicParser
 from parsers.expert_parser import ExpertParser
-from parsers.graphic_reestr_parser import GraphicReestrParser, GRAPHIC_EXTENSIONS
+from lakehouse_infra.mine_parser.parsers.media_reestr_parser import MediaReestrParser, MEDIA_EXTENSIONS
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +101,7 @@ class ParserFactory:
             'seismic': SeismicParser(inc_id),
             'expert': ExpertParser(inc_id),
             'hypothesis_facts': HypothesisFactsParser(inc_id),
-            'graphic_reestr':   GraphicReestrParser(inc_id),
+            'media_reestr':   MediaReestrParser(inc_id),
         }
     
     def _load_routing(self) -> Dict:
@@ -174,15 +174,15 @@ class ParserFactory:
         file_name = file_path_obj.name
         file_ext = file_path_obj.suffix.lower()
         
-        # ── Графические файлы: не читаем контент, только регистрируем в graphic_reestr ──
-        if file_ext in GRAPHIC_EXTENSIONS:
-            graphic_parser = self.parsers.get('graphic_reestr')
-            if graphic_parser:
-                result = graphic_parser.parse_file(file_path)
-                logger.info(f"Graphic file registered: {file_name}")
-                return {'results': result, 'parser': 'graphic_reestr', 'file': file_name}
+        # ── Графические файлы: не читаем контент, только регистрируем в media_reestr ──
+        if file_ext in MEDIA_EXTENSIONS:
+            media_parser = self.parsers.get('media_reestr')
+            if media_parser:
+                result = media_parser.parse_file(file_path)
+                logger.info(f"Media file registered: {file_name}")
+                return {'results': result, 'parser': 'media_reestr', 'file': file_name}
             else:
-                logger.warning(f"graphic_reestr parser not registered, skipping {file_name}")
+                logger.warning(f"media_reestr parser not registered, skipping {file_name}")
                 return {'results': {}, 'parser': None, 'file': file_name}
 
         cache_key = str(file_path_obj.absolute())
