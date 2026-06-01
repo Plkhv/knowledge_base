@@ -30,7 +30,7 @@ from parsers.witness_parser import WitnessParser
 from parsers.hypothesis_facts_parser import HypothesisFactsParser
 from parsers.seismic_parser import SeismicParser
 from parsers.expert_parser import ExpertParser
-from lakehouse_infra.mine_parser.parsers.media_reestr_parser import MediaReestrParser, MEDIA_EXTENSIONS
+from parsers.media_reestr_parser import MediaReestrParser, MEDIA_EXTENSIONS
 
 logger = logging.getLogger(__name__)
 
