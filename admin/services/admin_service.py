@@ -9,7 +9,7 @@ from config import Config
 import pandas as pd
 import logging
 import bcrypt
-from datetime import datetime
+from datetime import date, datetime
 
 from services.lakehouse_service import LakehouseService
 import re
@@ -266,6 +266,10 @@ class AdminService:
     def can_manage_users(self, user_role: UserRole) -> bool:
         """Проверка права на управление пользователями"""
         return user_role == UserRole.ADMIN
+
+    def can_rollback(self, user_role: UserRole) -> bool:
+        """Проверка права на откат таблицы"""
+        return user_role in [UserRole.ADMIN, UserRole.EXPERT]
     
     # ==================== Логирование запросов с user_id ====================
     
@@ -361,8 +365,8 @@ class AdminService:
         return self.lakehouse.list_snapshots(table_name, limit=limit)
 
     def rollback_table_to_snapshot(self, table_name: str, snapshot_id: int, current_user) -> None:
-        if current_user is None or current_user.role != UserRole.ADMIN:
-            raise PermissionError("Откат доступен только администратору")
+        if current_user is None or not self.can_rollback(current_user.role):
+            raise PermissionError("Откат доступен только администратору и эксперту")
 
         snap_before = None
         try:
@@ -452,6 +456,84 @@ class AdminService:
         except Exception as e:
             logger.error(f"Error getting columns: {e}")
             return []
+
+    def _get_table_column_types(self, table_name: str) -> dict[str, str]:
+        try:
+            described = self.lakehouse.get_table_schema(table_name)
+        except Exception:
+            return {}
+
+        column_types: dict[str, str] = {}
+        for row in described:
+            if not row or not row[0]:
+                continue
+            column_name = str(row[0]).strip()
+            column_type = str(row[1]).strip().lower() if len(row) > 1 and row[1] is not None else ""
+            if column_name:
+                column_types[column_name] = column_type
+        return column_types
+
+    @staticmethod
+    def _coerce_value_for_column(value, column_type: str):
+        if value is None or column_type is None:
+            return value
+
+        raw_type = str(column_type).strip().lower()
+        if not raw_type:
+            return value
+
+        if isinstance(value, str):
+            text_value = value.strip()
+        else:
+            text_value = value
+
+        if text_value in {"", None}:
+            return None
+
+        if raw_type.startswith(("varchar", "char", "varbinary", "json")):
+            return str(value)
+
+        if raw_type.startswith("boolean"):
+            if isinstance(value, bool):
+                return value
+            text = str(value).strip().lower()
+            if text in {"true", "1", "yes", "y", "да"}:
+                return True
+            if text in {"false", "0", "no", "n", "нет"}:
+                return False
+            return value
+
+        if raw_type.startswith(("tinyint", "smallint", "integer", "bigint")):
+            if isinstance(value, bool):
+                return int(value)
+            try:
+                return int(str(value).strip())
+            except Exception:
+                return value
+
+        if raw_type.startswith(("real", "double", "float")):
+            try:
+                return float(str(value).strip())
+            except Exception:
+                return value
+
+        if raw_type.startswith("decimal"):
+            try:
+                return float(str(value).strip())
+            except Exception:
+                return value
+
+        if raw_type.startswith("date"):
+            if isinstance(value, date) and not isinstance(value, datetime):
+                return value
+            return str(value).strip()
+
+        if raw_type.startswith(("timestamp", "time")):
+            if isinstance(value, (datetime, date)):
+                return value
+            return str(value).strip()
+
+        return value
     
     def insert_row(
         self,
@@ -594,9 +676,19 @@ class AdminService:
             if not all(is_safe_col(k) for k in updates.keys()):
                 raise ValueError("Invalid column name")
 
+            column_types = self._get_table_column_types(table_name)
+            coerced_updates = {
+                key: self._coerce_value_for_column(value, column_types.get(key, ""))
+                for key, value in updates.items()
+            }
+            coerced_primary_key_value = self._coerce_value_for_column(
+                primary_key_value,
+                column_types.get(primary_key, ""),
+            )
+
             if self.trino_engine is not None:
-                set_clause = ", ".join([f"{k} = :{k}" for k in updates.keys()])
-                params = {**updates, "pk_value": primary_key_value}
+                set_clause = ", ".join([f"{k} = :{k}" for k in coerced_updates.keys()])
+                params = {**coerced_updates, "pk_value": coerced_primary_key_value}
                 query = f"UPDATE {table_name} SET {set_clause} WHERE {primary_key} = :pk_value"
                 with self.trino_engine.connect() as conn:
                     conn.execute(text(query), params)
@@ -608,8 +700,8 @@ class AdminService:
                         except Exception:
                             pass
                     if log_change:
-                        cols = ",".join(sorted([str(k) for k in updates.keys()]))
-                        pkv = str(primary_key_value)
+                        cols = ",".join(sorted([str(k) for k in coerced_updates.keys()]))
+                        pkv = str(coerced_primary_key_value)
                         if len(pkv) > 120:
                             pkv = pkv[:117] + "..."
                         self.log_table_change(
@@ -622,8 +714,8 @@ class AdminService:
                         )
                     return True
 
-            set_clause = ", ".join([f"{k} = {quote(v)}" for k, v in updates.items()])
-            statement = f"UPDATE {table_name} SET {set_clause} WHERE {primary_key} = {quote(primary_key_value)}"
+            set_clause = ", ".join([f"{k} = {quote(v)}" for k, v in coerced_updates.items()])
+            statement = f"UPDATE {table_name} SET {set_clause} WHERE {primary_key} = {quote(coerced_primary_key_value)}"
             self.lakehouse.execute_statement(statement)
             snap_after = None
             if log_change:
@@ -632,8 +724,8 @@ class AdminService:
                 except Exception:
                     pass
             if log_change:
-                cols = ",".join(sorted([str(k) for k in updates.keys()]))
-                pkv = str(primary_key_value)
+                cols = ",".join(sorted([str(k) for k in coerced_updates.keys()]))
+                pkv = str(coerced_primary_key_value)
                 if len(pkv) > 120:
                     pkv = pkv[:117] + "..."
                 self.log_table_change(

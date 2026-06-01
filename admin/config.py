@@ -1,13 +1,15 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from runtime_paths import find_repo_root
 
 
-_CONFIG_DIR = Path(__file__).resolve().parent
+_REPO_ROOT = find_repo_root()
+_CONFIG_DIR = _REPO_ROOT / "admin"
 _ENV_CANDIDATES = [
     _CONFIG_DIR / ".env",
-    _CONFIG_DIR.parent / ".env",
-    _CONFIG_DIR.parent / "lakehouse_infra" / ".env",
+    _REPO_ROOT / ".env",
+    _REPO_ROOT / "lakehouse_infra" / ".env",
 ]
 
 for _env_path in _ENV_CANDIDATES:

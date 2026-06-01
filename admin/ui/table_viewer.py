@@ -170,7 +170,7 @@ class TableViewerWidget(QWidget):
 
         self.rollback_btn = QPushButton("Вернуть изменения")
         self.rollback_btn.clicked.connect(self.rollback_changes)
-        self.rollback_btn.setVisible(getattr(self.current_user, "role", None) == UserRole.ADMIN)
+        self.rollback_btn.setVisible(self.admin_service.can_rollback(getattr(self.current_user, "role", None)))
         toolbar.addWidget(self.rollback_btn)
         
         toolbar.addStretch()
@@ -374,8 +374,8 @@ class TableViewerWidget(QWidget):
             QDesktopServices.openUrl(QUrl(url))
 
     def rollback_changes(self):
-        if getattr(self.current_user, "role", None) != UserRole.ADMIN:
-            QMessageBox.warning(self, "Недостаточно прав", "Откат доступен только администратору")
+        if not self.admin_service.can_rollback(getattr(self.current_user, "role", None)):
+            QMessageBox.warning(self, "Недостаточно прав", "Откат доступен только администратору и эксперту")
             return
 
         latest_snapshot = self.admin_service.lakehouse.get_latest_snapshot_id(self.table_name)

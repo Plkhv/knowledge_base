@@ -6,6 +6,7 @@ from config import Config
 from db.models import Base
 import logging
 from pathlib import Path
+from runtime_paths import find_repo_root
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,8 @@ class Database:
         if Config.DATABASE_URL:
             self._engine = init_engine(Config.DATABASE_URL)
         else:
-            db_path = Path(__file__).resolve().parents[1] / "admin_local.sqlite3"
+            repo_root = find_repo_root()
+            db_path = repo_root / "admin" / "admin_local.sqlite3"
             sqlite_url = f"sqlite:///{db_path.as_posix()}"
             logger.warning(
                 "DATABASE_URL is not set. Using local SQLite fallback at %s for the admin app.",
@@ -47,7 +49,8 @@ class Database:
                 e,
             )
 
-            db_path = Path(__file__).resolve().parents[1] / "admin_local.sqlite3"
+            repo_root = find_repo_root()
+            db_path = repo_root / "admin" / "admin_local.sqlite3"
             sqlite_url = f"sqlite:///{db_path.as_posix()}"
             self._engine = init_engine(sqlite_url)
 

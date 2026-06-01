@@ -18,6 +18,7 @@ import json
 import shutil
 import subprocess
 import time
+from runtime_paths import find_repo_root
 
 AIRFLOW_DAG_ID = "data_processing_dag"
 
@@ -311,7 +312,7 @@ class LakehouseAdminPanel(QMainWindow):
     def setup_ui(self):
         self.setWindowTitle("Lakehouse Admin Panel")
         self.setGeometry(100, 100, 1400, 800)
-        repo_root = Path(__file__).resolve().parents[2]
+        repo_root = find_repo_root()
         self.data_dir = repo_root / "lakehouse_infra" / "mine_parser" / "data"
         
         central_widget = QWidget()
@@ -530,7 +531,7 @@ class LakehouseAdminPanel(QMainWindow):
         }
 
         try:
-            repo_root = Path(__file__).resolve().parents[2]
+            repo_root = find_repo_root()
             airflow_dir = repo_root / "lakehouse_infra"
 
             # Airflow may keep DAGs paused after first discovery; queued runs won't start until unpaused.
