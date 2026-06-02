@@ -62,8 +62,8 @@ BATCH_SIZE = 1000
 
 MINIO_CONFIG = {
     'endpoint':   os.getenv('MINIO_ENDPOINT', 'http://minio:9000'),
-    'access_key': os.getenv('MINIO_ACCESS_KEY', 'admin'),
-    'secret_key': os.getenv('MINIO_SECRET_KEY', 'password'),
+    'access_key': os.getenv('MINIO_ACCESS_KEY', 'minioadmin'),
+    'secret_key': os.getenv('MINIO_SECRET_KEY', 'MB9XwuCHhbdN3ChrWhtGScmd'),
     'bucket':     os.getenv('MINIO_BUCKET', 'lakehouse'),
 }
 
