@@ -475,7 +475,7 @@ services:
       - ./mine_parser:/opt/airflow/mine_parser
       - airflow-site-packages:/home/airflow/.local
     ports:
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8082:8080"
     networks:
       - lakehouse-net
     command: >
