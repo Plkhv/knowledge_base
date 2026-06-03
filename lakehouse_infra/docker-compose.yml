@@ -124,14 +124,69 @@ services:
     networks:
       - lakehouse-net
     restart: "no"
-    command: >
+    command: |
       bash -lc "
-      set -e;
-      echo 'Waiting for Airflow database and DAG registration...';
-      until airflow db check >/dev/null 2>&1; do sleep 5; done;
-      until airflow dags list 2>/dev/null | grep -q 'trino_tables_setup'; do sleep 5; done;
-      python -c \"from datetime import datetime, timezone; import json, subprocess; run_id = 'infra_startup_' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ'); payload = {'source': 'infra_startup', 'triggered_by': 'airflow_init_trino_tables', 'dag_id': 'trino_tables_setup'}; subprocess.run(['airflow', 'dags', 'trigger', 'trino_tables_setup', '--run-id', run_id, '--conf', json.dumps(payload, ensure_ascii=False)], check=True)\";
-      echo 'Triggered trino_tables_setup via Airflow CLI';
+      set -e
+      echo 'Waiting for Airflow database and DAG registration...'
+      until airflow db check >/dev/null 2>&1; do sleep 5; done
+      until airflow dags list 2>/dev/null | grep -q 'trino_tables_setup'; do sleep 5; done
+      if airflow dags list-import-errors 2>/dev/null | grep -q 'trino_tables'; then
+        echo 'DAG import errors detected for trino_tables:'
+        airflow dags list-import-errors || true
+        exit 1
+      fi
+      python - <<'PY'
+      from datetime import datetime, timezone
+      import json
+      import os
+      import subprocess
+      import time
+
+      dag_id = os.getenv('AIRFLOW_DAG_ID', 'trino_tables_setup')
+      poll = int(os.getenv('TRIGGER_POLL_INTERVAL', '10'))
+      timeout = int(os.getenv('TRIGGER_TIMEOUT_SECONDS', '900'))
+      started = time.time()
+      payload = {
+        'source': 'infra_startup',
+        'triggered_by': 'airflow_init_trino_tables',
+        'dag_id': dag_id,
+      }
+      attempt = 0
+
+      while True:
+        attempt += 1
+        run_id = 'infra_startup_' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ') + f'_{attempt}'
+        cmd = ['airflow', 'dags', 'trigger', dag_id, '--run-id', run_id, '--conf', json.dumps(payload, ensure_ascii=False)]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+
+        if result.returncode == 0:
+          print('Triggered', dag_id, 'via Airflow CLI')
+          break
+
+        stderr = result.stderr or ''
+        stdout = result.stdout or ''
+        dag_not_found = (
+          'DagNotFound' in stderr
+          or 'DagNotFound' in stdout
+          or 'not found in DagModel' in stderr
+          or 'not found in DagModel' in stdout
+        )
+
+        if dag_not_found:
+          if time.time() - started > timeout:
+            print('Timeout waiting for DAG registration in DagModel')
+            print(stdout)
+            print(stderr)
+            raise SystemExit(1)
+          print(f'DAG not in DagModel yet, retrying in {poll}s (attempt {attempt})')
+          time.sleep(poll)
+          continue
+
+        print(stdout)
+        print(stderr)
+        raise SystemExit(result.returncode)
+      PY
+      echo 'Triggered trino_tables_setup via Airflow CLI'
       "
 
   # Инициализация Python-зависимостей Airflow
