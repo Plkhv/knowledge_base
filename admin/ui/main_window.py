@@ -28,17 +28,23 @@ class LakehouseAdminPanel(QMainWindow):
         self.admin_service = AdminService()
         self.lakehouse_service = LakehouseService()
         self.current_user = None
-        self.setup_ui()
-        self.show_login()
+        if self.show_login():
+            self.setup_ui()
+        else:
+            self.close_app()    
     
     def show_login(self):
         dialog = LoginDialog(self.admin_service, self)
-        if dialog.exec():
+        
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return 
+        elif dialog.exec():
             self.current_user = dialog.user
             self.setup_ui_for_role()
             self.load_tables()
+            return 1
         else:
-            self.close()
+            return
     
     def setup_ui_for_role(self):
         is_admin = self.current_user.role == UserRole.ADMIN
@@ -67,7 +73,7 @@ class LakehouseAdminPanel(QMainWindow):
         role_text = {
             UserRole.ADMIN: "Администратор",
             UserRole.EXPERT: "Эксперт",
-            UserRole.VIEWER: "Наблюдатель"
+            #UserRole.VIEWER: "Наблюдатель"
         }.get(self.current_user.role, "Неизвестно")
         
         self.statusBar().showMessage(f"Пользователь: {self.current_user.full_name} ({role_text})", 5000)
@@ -187,7 +193,7 @@ class LakehouseAdminPanel(QMainWindow):
         confirm_edit = QLineEdit()
         confirm_edit.setEchoMode(QLineEdit.EchoMode.Password)
         role_combo = QComboBox()
-        role_combo.addItems([UserRole.EXPERT.value, UserRole.VIEWER.value])
+        role_combo.addItems([UserRole.EXPERT.value])
 
         incidents_edit = QLineEdit()
         incidents_edit.setPlaceholderText("Напр.: INC-001,INC-002")
@@ -239,7 +245,7 @@ class LakehouseAdminPanel(QMainWindow):
         
         fullname_edit = QLineEdit(user.full_name or "")
         role_combo = QComboBox()
-        role_combo.addItems([UserRole.EXPERT.value, UserRole.VIEWER.value])
+        role_combo.addItems([UserRole.EXPERT.value])
         role_combo.setCurrentText(user.role.value)
 
         incidents_edit = QLineEdit(getattr(user, "allowed_incident_ids", "") or "")
@@ -353,14 +359,14 @@ class LakehouseAdminPanel(QMainWindow):
         self.history_btn.clicked.connect(self.show_history)
         toolbar_layout.addWidget(self.history_btn)
         
-        self.add_metadata_btn = QPushButton("Добавить метаданные")
-        self.add_metadata_btn.clicked.connect(self.add_table_metadata)
-        toolbar_layout.addWidget(self.add_metadata_btn)
-        
-        self.logout_btn = QPushButton("Выйти")
+        self.logout_btn = QPushButton("Сменить аккаунт")
         self.logout_btn.clicked.connect(self.logout)
         toolbar_layout.addWidget(self.logout_btn)
         
+        self.exit_btn = QPushButton("Выйти из панели")
+        self.exit_btn.clicked.connect(self.close_app)
+        toolbar_layout.addWidget(self.exit_btn)
+
         toolbar_layout.addStretch()
         
         self.user_label = QLabel()
@@ -737,3 +743,21 @@ class LakehouseAdminPanel(QMainWindow):
             # Очищаем вкладки
             while self.tab_widget.count() > 0:
                 self.tab_widget.removeTab(0)
+    
+    def close_app(self):
+        """Закрыть приложение полностью"""
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Подтверждение")
+        msg_box.setText("Вы уверены, что хотите закрыть приложение?")
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        
+        # Создаем кнопки с русскими названиями
+        yes_button = msg_box.addButton("Да", QMessageBox.ButtonRole.YesRole)
+        no_button = msg_box.addButton("Нет", QMessageBox.ButtonRole.NoRole)
+        
+        msg_box.setDefaultButton(no_button)  # Кнопка "Нет" по умолчанию
+        
+        msg_box.exec()
+        
+        if msg_box.clickedButton() == yes_button:
+            self.close()

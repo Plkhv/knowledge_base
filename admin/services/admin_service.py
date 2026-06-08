@@ -43,23 +43,23 @@ class AdminService:
     def _normalize_role(role) -> UserRole:
         if isinstance(role, UserRole):
             return role
-        if role is None:
-            return UserRole.VIEWER
+        #if role is None:
+        #    return UserRole.VIEWER
 
         role_str = str(role).strip()
-        if not role_str:
-            return UserRole.VIEWER
+        #if not role_str:
+        #    return UserRole.VIEWER
 
         role_upper = role_str.upper()
         # Support UI legacy values like "expert" / "viewer"
-        if role_upper in {"ADMIN", "EXPERT", "VIEWER"}:
+        if role_upper in {"ADMIN", "EXPERT"}:
             return UserRole(role_upper)
         if role_upper in {"АДМИН", "ADMINISTRATOR"}:
             return UserRole.ADMIN
         if role_upper in {"EXPERT", "ЭКСПЕРТ"}:
             return UserRole.EXPERT
-        if role_upper in {"VIEWER", "ОБЗОР", "НАБЛЮДАТЕЛЬ"}:
-            return UserRole.VIEWER
+        #if role_upper in {"VIEWER", "ОБЗОР", "НАБЛЮДАТЕЛЬ"}:
+        #    return UserRole.VIEWER
 
         # Last resort: try enum constructor (will raise ValueError)
         return UserRole(role_str)
@@ -416,7 +416,7 @@ class AdminService:
 
         query = f"SELECT * FROM {qualified}"
         role = self._normalize_role(user_role) if user_role is not None else None
-        if role in {UserRole.EXPERT, UserRole.VIEWER}:
+        if role in {UserRole.EXPERT}:
             if current_user is None:
                 raise PermissionError("Не удалось определить пользователя для фильтрации по инцидентам")
             cols = [c.lower() for c in self.get_table_columns(table_name)]
