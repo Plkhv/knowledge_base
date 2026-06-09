@@ -38,31 +38,45 @@ class AdminService:
             # SQLAlchemy dialect for Trino may be missing; fallback to trino.dbapi in LakehouseService.
             logger.warning("Trino SQLAlchemy dialect is not available; falling back to trino.dbapi. Error: %s", e)
         self._init_default_admin()
+        self._migrate_legacy_viewer_roles()
 
     @staticmethod
     def _normalize_role(role) -> UserRole:
         if isinstance(role, UserRole):
             return role
-        #if role is None:
-        #    return UserRole.VIEWER
 
         role_str = str(role).strip()
-        #if not role_str:
-        #    return UserRole.VIEWER
 
         role_upper = role_str.upper()
-        # Support UI legacy values like "expert" / "viewer"
+        if role_upper == "VIEWER":
+            return UserRole.EXPERT
+        # Support UI legacy values like "expert"
         if role_upper in {"ADMIN", "EXPERT"}:
             return UserRole(role_upper)
         if role_upper in {"АДМИН", "ADMINISTRATOR"}:
             return UserRole.ADMIN
         if role_upper in {"EXPERT", "ЭКСПЕРТ"}:
             return UserRole.EXPERT
-        #if role_upper in {"VIEWER", "ОБЗОР", "НАБЛЮДАТЕЛЬ"}:
-        #    return UserRole.VIEWER
 
         # Last resort: try enum constructor (will raise ValueError)
         return UserRole(role_str)
+
+    def _migrate_legacy_viewer_roles(self) -> None:
+        session = self.db.session
+        try:
+            updated = (
+                session.query(User)
+                .filter(User.role == UserRole.VIEWER)
+                .update({User.role: UserRole.EXPERT}, synchronize_session=False)
+            )
+            if updated:
+                session.commit()
+                logger.info("Migrated %s legacy VIEWER users to EXPERT", updated)
+        except Exception as e:
+            session.rollback()
+            logger.warning("Error migrating legacy viewer roles: %s", e)
+        finally:
+            session.close()
     
     def _init_default_admin(self):
         """Создание default администратора при первом запуске"""
@@ -402,7 +416,7 @@ class AdminService:
     ) -> pd.DataFrame:
         """Получить данные таблицы (с проверкой прав на чтение).
 
-        Для ролей EXPERT/VIEWER применяется фильтр по incident_id согласно users.allowed_incident_ids.
+        Для роли EXPERT применяется фильтр по incident_id согласно users.allowed_incident_ids.
         """
         if not self.can_read(user_role):
             raise PermissionError("У вас нет прав на просмотр данных")

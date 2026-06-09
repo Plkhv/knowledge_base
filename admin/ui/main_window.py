@@ -28,23 +28,22 @@ class LakehouseAdminPanel(QMainWindow):
         self.admin_service = AdminService()
         self.lakehouse_service = LakehouseService()
         self.current_user = None
+        self.login_accepted = False
+
         if self.show_login():
+            self.login_accepted = True
             self.setup_ui()
-        else:
-            self.close_app()    
+            self.setup_ui_for_role()
+            self.load_tables()
     
     def show_login(self):
         dialog = LoginDialog(self.admin_service, self)
         
-        if dialog.exec() != QDialog.DialogCode.Accepted:
-            return 
-        elif dialog.exec():
+        if dialog.exec() == QDialog.DialogCode.Accepted:
             self.current_user = dialog.user
-            self.setup_ui_for_role()
-            self.load_tables()
-            return 1
-        else:
-            return
+            return True
+
+        return False
     
     def setup_ui_for_role(self):
         is_admin = self.current_user.role == UserRole.ADMIN
@@ -73,7 +72,6 @@ class LakehouseAdminPanel(QMainWindow):
         role_text = {
             UserRole.ADMIN: "Администратор",
             UserRole.EXPERT: "Эксперт",
-            #UserRole.VIEWER: "Наблюдатель"
         }.get(self.current_user.role, "Неизвестно")
         
         self.statusBar().showMessage(f"Пользователь: {self.current_user.full_name} ({role_text})", 5000)

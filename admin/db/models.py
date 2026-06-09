@@ -8,7 +8,6 @@ Base = declarative_base()
 class UserRole(enum.Enum):
     ADMIN = "ADMIN"   
     EXPERT = "EXPERT" 
-    VIEWER = "VIEWER" 
 
 class User(Base):
     __tablename__ = "users"
@@ -17,10 +16,10 @@ class User(Base):
     username = Column(String(100), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     full_name = Column(String(200), nullable=True)
-    role = Column(Enum(UserRole), default=UserRole.VIEWER)
+    role = Column(Enum(UserRole), default=UserRole.EXPERT)
     is_active = Column(Boolean, default=True)
     # Comma-separated list of incident identifiers the user is allowed to view.
-    # Used for row-level filtering in Trino queries for EXPERT/VIEWER roles.
+    # Used for row-level filtering in Trino queries for EXPERT users.
     allowed_incident_ids = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login = Column(DateTime)

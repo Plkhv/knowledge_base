@@ -15,6 +15,9 @@ def main():
     app.setStyle("Fusion")
 
     window = LakehouseAdminPanel()
+    if not getattr(window, "login_accepted", False):
+        sys.exit(0)
+
     window.show()
 
     sys.exit(app.exec())
